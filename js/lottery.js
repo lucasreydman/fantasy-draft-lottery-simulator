@@ -2,9 +2,6 @@
 // CONSTANTS
 // ============================================
 
-// Fixed lottery combinations — 1,001 possible (1 discarded = 1,000 used), just like the NBA.
-// Index 0 = 10th/worst … 5 = 5th; 6–9 = non-lottery teams (0 combinations).
-const COMBINATIONS = [224, 224, 224, 224, 60, 45, 0, 0, 0, 0];
 const TOTAL_POOL = 1001;
 const ASSIGNED = 1000;
 
@@ -17,78 +14,86 @@ const REVEAL_START_DELAY_MS = 1000;
 const NEXT_BUTTON_DELAY_MS = 1000;
 
 // localStorage keys
+const LS_KEY_LEAGUE_CONFIG = 'lotteryLeagueConfig';
 const LS_KEY_TEAM_NAMES = 'lotteryTeamNames';
 const LS_KEY_TEAMS_LOCKED = 'lotteryTeamsLocked';
 const LS_KEY_PICK_OWNERSHIP_LOCKED = 'lotteryPickOwnershipLocked';
 const LS_KEY_PICK_OWNERSHIP = 'lotteryPickOwnership';
 
-let currentChances = [...COMBINATIONS];
+// ============================================
+// LEAGUE CONFIG
+// ============================================
 
-const TEAM_NAME_OPTIONS = [
-    "Bradley's Bandits",
-    "Buttar's Barbarians",
-    "Cyr's Beers",
-    "Darcy's Demons",
-    "Lu's Lazers",
-    "Moe's Hoes",
-    "Sith's Nips",
-    "Sleepy's Steppaz",
-    "Teezy's Turtles",
-    "Zim's Sims"
-];
+let leagueConfig = null;
 
-const TEAM_LABELS = [
-    "10th Seed",
-    "9th Seed",
-    "8th Seed",
-    "7th Seed",
-    "6th Seed",
-    "5th Seed",
-    "4th Seed",
-    "3rd Place",
-    "2nd Place",
-    "Champion"
-];
-
-// Default team assignments (index 0 = 10th seed, index 9 = champion)
-const DEFAULT_TEAM_ASSIGNMENTS = [
-    "Darcy's Demons",
-    "Teezy's Turtles",
-    "Cyr's Beers",
-    "Buttar's Barbarians",
-    "Sleepy's Steppaz",
-    "Zim's Sims",
-    "Bradley's Bandits",
-    "Sith's Nips",
-    "Moe's Hoes",
-    "Lu's Lazers"
-];
-
-// Teams: start blank, populated from localStorage or user selection.
-const teams = currentChances.map((c) => ({ name: '', chances: c }));
-
-function applyChancesToTeams() {
-    currentChances.forEach((c, i) => { teams[i].chances = c; });
+function loadLeagueConfig() {
+    try {
+        const saved = localStorage.getItem(LS_KEY_LEAGUE_CONFIG);
+        if (!saved) return null;
+        const config = JSON.parse(saved);
+        if (!config || typeof config.teamCount !== 'number') return null;
+        config.lockedPicks = config.teamCount - config.drawnPicks - config.byRecordPicks;
+        return config;
+    } catch (e) {
+        console.warn('Failed to load league config', e);
+        return null;
+    }
 }
 
-// Odds table: fixed probabilities derived from 1,000 combinations (verified via 5M simulations).
-const odds = [
-    [22.4, 21.9, 21.0, 19.1, 15.7,  0.0],
-    [22.4, 21.8, 20.9, 19.1, 14.7,  0.9],
-    [22.4, 21.9, 20.9, 19.1, 13.8,  1.9],
-    [22.4, 21.9, 21.0, 19.1, 12.8,  2.8],
-    [ 6.0,  7.2,  9.2, 13.3, 43.0, 21.3],
-    [ 4.4,  5.4,  7.0, 10.3,  0.0, 73.0]
-];
+function saveLeagueConfig(config) {
+    config.lockedPicks = config.teamCount - config.drawnPicks - config.byRecordPicks;
+    config.odds = computeOdds(config.combinations, config.drawnPicks);
+    safeSetItem(LS_KEY_LEAGUE_CONFIG, JSON.stringify(config));
+    leagueConfig = config;
+}
 
-// Initialize pick ownership data structure
-const pickOwnership = Array(3).fill().map(() => Array(10).fill().map(() => null));
+function generateTeamLabels(teamCount) {
+    const labels = new Array(teamCount);
+    // Last index = Champion (best), index 0 = worst seed
+    if (teamCount >= 1) labels[teamCount - 1] = 'Champion';
+    if (teamCount >= 2) labels[teamCount - 2] = '2nd Place';
+    if (teamCount >= 3) labels[teamCount - 3] = '3rd Place';
+    for (let i = teamCount - 4; i >= 0; i--) {
+        labels[i] = `${formatOrdinal(teamCount - i)} Seed`;
+    }
+    return labels;
+}
 
+function sanitizeFilename(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// ============================================
+// DYNAMIC STATE (initialized from config)
+// ============================================
+
+let currentChances = [];
+let teams = [];
+let pickOwnership = [];
 let teamsLocked = false;
 let pickOwnershipLocked = false;
 let confirmTeamButton = null;
 let confirmPickOwnershipButton = null;
 let lastLotteryResult = null;
+
+function initStateFromConfig() {
+    const lotteryEligible = leagueConfig.combinations;
+    currentChances = [...lotteryEligible, ...new Array(leagueConfig.lockedPicks).fill(0)];
+    teams = currentChances.map((c, i) => ({
+        name: leagueConfig.teamNames[i] || '',
+        chances: c
+    }));
+    pickOwnership = Array(leagueConfig.rounds).fill(null).map(() =>
+        Array(leagueConfig.teamCount).fill(null).map(() => null)
+    );
+}
+
+function applyChancesToTeams() {
+    currentChances.forEach((c, i) => { teams[i].chances = c; });
+}
+
+// Stub — replaced with full implementation in Task 3
+function computeOdds(combinations, drawnPicks) { return []; }
 
 // ============================================
 // TOAST NOTIFICATIONS (replaces alert())
