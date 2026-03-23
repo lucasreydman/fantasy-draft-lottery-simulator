@@ -92,8 +92,70 @@ function applyChancesToTeams() {
     currentChances.forEach((c, i) => { teams[i].chances = c; });
 }
 
-// Stub — replaced with full implementation in Task 3
-function computeOdds(combinations, drawnPicks) { return []; }
+// ============================================
+// ANALYTICAL ODDS CALCULATION
+// ============================================
+
+function computeOdds(combinations, drawnPicks) {
+    const n = combinations.length; // lottery-eligible teams
+    const total = combinations.reduce((a, b) => a + b, 0);
+    // odds[team][position] — team = lottery-eligible index, position = final pick position (0-indexed)
+    const odds = Array.from({ length: n }, () => new Array(n).fill(0));
+
+    // Recursive enumeration of drawn pick states
+    // state: { drawnSet: Set of drawn team indices, probability: number }
+    // At each pick k (0..drawnPicks-1), expand all states
+
+    let states = [{ drawnSet: new Set(), prob: 1.0 }];
+
+    for (let pick = 0; pick < drawnPicks; pick++) {
+        const nextStates = new Map(); // key = sorted drawn indices string, value = { drawnSet, prob }
+
+        for (const state of states) {
+            const remainingPool = total - [...state.drawnSet].reduce((s, i) => s + combinations[i], 0);
+            if (remainingPool <= 0) continue;
+
+            for (let team = 0; team < n; team++) {
+                if (state.drawnSet.has(team)) continue;
+                if (combinations[team] <= 0) continue;
+
+                const drawProb = combinations[team] / remainingPool;
+                const totalProb = state.prob * drawProb;
+
+                // Record this team getting this pick position
+                odds[team][pick] += totalProb;
+
+                // Build next state
+                const newDrawn = new Set(state.drawnSet);
+                newDrawn.add(team);
+                const key = [...newDrawn].sort((a, b) => a - b).join(',');
+
+                if (nextStates.has(key)) {
+                    nextStates.get(key).prob += totalProb;
+                } else {
+                    nextStates.set(key, { drawnSet: newDrawn, prob: totalProb });
+                }
+            }
+        }
+
+        states = [...nextStates.values()];
+    }
+
+    // For by-record positions: remaining teams sorted by ascending index (worst seed first)
+    for (const state of states) {
+        const remaining = [];
+        for (let i = 0; i < n; i++) {
+            if (!state.drawnSet.has(i)) remaining.push(i);
+        }
+        remaining.sort((a, b) => a - b);
+        remaining.forEach((team, idx) => {
+            odds[team][drawnPicks + idx] += state.prob;
+        });
+    }
+
+    // Convert to percentages rounded to 1 decimal
+    return odds.map(row => row.map(p => Math.round(p * 1000) / 10));
+}
 
 // ============================================
 // TOAST NOTIFICATIONS (replaces alert())
