@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/index.html /c/Users/lucas/dev/fantasy-draft-lottery-simulator/)",
+      "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/js/lottery.js /c/Users/lucas/dev/fantasy-draft-lottery-simulator/js/)",
+      "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/styles/main.css /c/Users/lucas/dev/fantasy-draft-lottery-simulator/styles/)",
+      "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/images/favicon.png /c/Users/lucas/dev/fantasy-draft-lottery-simulator/images/)",
+      "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/.github/workflows/static.yml /c/Users/lucas/dev/fantasy-draft-lottery-simulator/.github/workflows/)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
