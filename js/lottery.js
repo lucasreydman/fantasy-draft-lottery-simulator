@@ -654,12 +654,12 @@ function loadSavedPickOwnership() {
         const savedOwnership = localStorage.getItem(LS_KEY_PICK_OWNERSHIP);
         if (!savedOwnership) return;
         const parsedOwnership = JSON.parse(savedOwnership);
-        if (!Array.isArray(parsedOwnership) || parsedOwnership.length !== 3) return;
-        for (let round = 0; round < 3; round++) {
+        if (!Array.isArray(parsedOwnership) || parsedOwnership.length !== leagueConfig.rounds) return;
+        for (let round = 0; round < leagueConfig.rounds; round++) {
             if (!Array.isArray(parsedOwnership[round])) continue;
-            for (let pick = 0; pick < 10; pick++) {
+            for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
                 const val = parsedOwnership[round][pick];
-                if (val !== null && (typeof val !== 'number' || val < 0 || val > 9)) continue;
+                if (val !== null && (typeof val !== 'number' || val < 0 || val > leagueConfig.teamCount - 1)) continue;
                 pickOwnership[round][pick] = val;
             }
         }
