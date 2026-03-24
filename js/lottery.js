@@ -923,7 +923,7 @@ function createPickOwnershipTable() {
 
     const tbody = document.createElement('tbody');
 
-    for (let round = 0; round < 3; round++) {
+    for (let round = 0; round < leagueConfig.rounds; round++) {
         const roundHeaderRow = document.createElement('tr');
         roundHeaderRow.className = 'round-header';
         const roundHeaderCell = document.createElement('td');
@@ -932,11 +932,11 @@ function createPickOwnershipTable() {
         roundHeaderRow.appendChild(roundHeaderCell);
         tbody.appendChild(roundHeaderRow);
 
-        for (let pick = 0; pick < 10; pick++) {
+        for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
             const row = document.createElement('tr');
 
             const pickCell = document.createElement('td');
-            pickCell.textContent = round * 10 + pick + 1;
+            pickCell.textContent = round * leagueConfig.teamCount + pick + 1;
             row.appendChild(pickCell);
 
             const originalTeamCell = document.createElement('td');
