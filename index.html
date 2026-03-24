@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The People's Dynasty League - Draft Lottery</title>
+    <title>Fantasy Draft Lottery Simulator</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,8 +16,8 @@
     </div>
     <div class="container">
         <div class="league-header">
-            <h1>The People's Dynasty League</h1>
-            <p class="subtitle">Fantasy NBA Draft Lottery Simulator</p>
+            <h1 id="leagueTitle">Fantasy Draft Lottery</h1>
+            <p class="subtitle" id="leagueSubtitle">Configure your league to get started</p>
             <button type="button" id="reconfigureBtn" class="reconfigure-button" title="Reconfigure League">&#9881; Reconfigure</button>
         </div>
 
@@ -70,7 +70,7 @@
 
         <section class="draft-order-section">
             <h2>Full Draft Order</h2>
-            <p class="section-description">The complete 3-round draft order appears here after running the lottery. Download the full order (with trades) or the original top 10 (lottery result only).</p>
+            <p class="section-description" id="draftOrderDesc">The complete draft order appears here after running the lottery.</p>
             <div id="fullDraftOrder" class="full-draft-order">
                 <!-- Will be populated by JavaScript after lottery runs -->
             </div>
