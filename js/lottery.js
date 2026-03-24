@@ -947,7 +947,7 @@ function createPickOwnershipTable() {
 
             const ownerCell = document.createElement('td');
             const ownerSelect = document.createElement('select');
-            ownerSelect.setAttribute('aria-label', `Owner of pick ${round * 10 + pick + 1}`);
+            ownerSelect.setAttribute('aria-label', `Owner of pick ${round * leagueConfig.teamCount + pick + 1}`);
 
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
