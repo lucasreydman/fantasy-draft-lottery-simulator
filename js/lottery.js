@@ -837,21 +837,45 @@ function applyLotteryButtonState() {
 // ============================================
 
 function refreshOddsTableBody() {
-    const tableBody = document.getElementById('oddsTableBody');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
-    odds.forEach((teamOdds, index) => {
+    const table = document.getElementById('oddsTable');
+    if (!table || !leagueConfig) return;
+    table.innerHTML = '';
+
+    const lotteryEligible = leagueConfig.drawnPicks + leagueConfig.byRecordPicks;
+    const labels = generateTeamLabels(leagueConfig.teamCount);
+
+    // thead
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const teamTh = document.createElement('th');
+    teamTh.textContent = 'Team';
+    headerRow.appendChild(teamTh);
+    for (let i = 0; i < lotteryEligible; i++) {
+        const th = document.createElement('th');
+        th.textContent = formatOrdinal(i + 1);
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // tbody
+    const tbody = document.createElement('tbody');
+    tbody.id = 'oddsTableBody';
+    for (let t = 0; t < lotteryEligible; t++) {
         const row = document.createElement('tr');
         const teamCell = document.createElement('td');
-        teamCell.textContent = `Team ${index + 1}`;
+        teamCell.textContent = labels[t];
         row.appendChild(teamCell);
-        teamOdds.forEach(odd => {
+        const teamOdds = leagueConfig.odds[t] || [];
+        for (let p = 0; p < lotteryEligible; p++) {
             const cell = document.createElement('td');
-            cell.textContent = typeof odd === 'number' ? `${odd.toFixed(1)}%` : '0.0%';
+            const val = teamOdds[p];
+            cell.textContent = typeof val === 'number' ? `${val.toFixed(1)}%` : '0.0%';
             row.appendChild(cell);
-        });
-        tableBody.appendChild(row);
-    });
+        }
+        tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
 }
 
 function createOddsTable() {
