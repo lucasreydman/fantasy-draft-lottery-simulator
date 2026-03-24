@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <script src="js/lottery.js?v=2"></script>
+    <script src="js/lottery.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const button = document.getElementById('lotteryButton');
@@ -89,10 +89,16 @@
 
             const resetBtn = document.getElementById('resetButton');
             if (resetBtn) resetBtn.addEventListener('click', function() {
-                if (confirm('This will clear all saved teams, pick ownership, and lock states. Continue?')) {
+                if (confirm('This will clear all saved data and league configuration. Continue?')) {
                     localStorage.clear();
                     location.reload();
                 }
+            });
+
+            const reconfigBtn = document.getElementById('reconfigureBtn');
+            if (reconfigBtn) reconfigBtn.addEventListener('click', function() {
+                const currentConfig = loadLeagueConfig();
+                showSetupWizard(currentConfig);
             });
         });
     </script>

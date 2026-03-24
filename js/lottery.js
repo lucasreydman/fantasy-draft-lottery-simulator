@@ -1760,19 +1760,42 @@ function formatOrdinal(num) {
 // INITIALIZATION
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+function initApp() {
+    if (!leagueConfig) return;
+    initStateFromConfig();
     applyChancesToTeams();
     loadTeamLockState();
     loadPickOwnershipLockState();
+    loadSavedTeamNames();
+
+    // Update dynamic header elements
+    const titleEl = document.getElementById('leagueTitle');
+    if (titleEl) titleEl.textContent = leagueConfig.leagueName;
+    const subtitleEl = document.getElementById('leagueSubtitle');
+    if (subtitleEl) subtitleEl.textContent = 'Draft Lottery Simulator';
+    document.title = `${leagueConfig.leagueName} - Draft Lottery`;
+
     createTeamInputs();
     applyTeamLockState();
-    createOddsTable();
+    refreshOddsTableBody();
     loadSavedPickOwnership();
     createPickOwnershipTable();
     applyLotteryButtonState();
 
     const draftOrderSection = document.querySelector('.draft-order-section');
     if (draftOrderSection) draftOrderSection.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    leagueConfig = loadLeagueConfig();
+
+    if (!leagueConfig) {
+        showSetupWizard(null);
+    } else {
+        const wizard = document.getElementById('setupWizard');
+        if (wizard) wizard.style.display = 'none';
+        initApp();
+    }
 });
 
 window.runLottery = runLottery;
