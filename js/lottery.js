@@ -158,6 +158,409 @@ function computeOdds(combinations, drawnPicks) {
 }
 
 // ============================================
+// SETUP WIZARD
+// ============================================
+
+function showSetupWizard(existingConfig) {
+    const overlay = document.getElementById('setupWizard');
+    if (!overlay) return;
+
+    const config = existingConfig || {
+        leagueName: '',
+        teamCount: 10,
+        teamNames: [],
+        drawnPicks: 4,
+        byRecordPicks: 2,
+        combinations: [],
+        rounds: 3
+    };
+
+    let currentStep = 0;
+    const totalSteps = 6;
+
+    overlay.style.display = 'flex';
+    document.querySelector('.container').style.display = 'none';
+
+    function render() {
+        overlay.innerHTML = '';
+
+        const card = document.createElement('div');
+        card.className = 'wizard-card';
+
+        // Progress dots
+        const progress = document.createElement('div');
+        progress.className = 'wizard-progress';
+        for (let i = 0; i < totalSteps; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'wizard-progress-dot';
+            if (i < currentStep) dot.classList.add('completed');
+            if (i === currentStep) dot.classList.add('active');
+            progress.appendChild(dot);
+        }
+        card.appendChild(progress);
+
+        const stepRenderers = [
+            renderLeagueName,
+            renderTeamCount,
+            renderTeamNames,
+            renderLotteryStructure,
+            renderCombinations,
+            renderDraftRounds
+        ];
+
+        stepRenderers[currentStep](card);
+
+        // Navigation
+        const nav = document.createElement('div');
+        nav.className = 'wizard-nav';
+
+        if (currentStep > 0) {
+            const backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'wizard-btn-back';
+            backBtn.textContent = 'Back';
+            backBtn.addEventListener('click', () => { currentStep--; render(); });
+            nav.appendChild(backBtn);
+        } else {
+            nav.appendChild(document.createElement('div')); // spacer
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'wizard-btn-next';
+        nextBtn.textContent = currentStep === totalSteps - 1 ? 'Finish Setup' : 'Next';
+        nextBtn.addEventListener('click', () => {
+            if (validateStep()) {
+                if (currentStep === totalSteps - 1) {
+                    finishWizard();
+                } else {
+                    currentStep++;
+                    render();
+                }
+            }
+        });
+        nav.appendChild(nextBtn);
+
+        card.appendChild(nav);
+        overlay.appendChild(card);
+
+        // Focus first input
+        const firstInput = card.querySelector('input');
+        if (firstInput) firstInput.focus();
+    }
+
+    function renderLeagueName(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'League Name';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'What is your fantasy league called?';
+        card.appendChild(subtitle);
+
+        const field = document.createElement('div');
+        field.className = 'wizard-field';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'wizLeagueName';
+        input.placeholder = 'My Fantasy League';
+        input.maxLength = 60;
+        input.value = config.leagueName || '';
+        field.appendChild(input);
+        card.appendChild(field);
+    }
+
+    function renderTeamCount(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Number of Teams';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'How many teams are in your league?';
+        card.appendChild(subtitle);
+
+        const field = document.createElement('div');
+        field.className = 'wizard-field';
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = 'wizTeamCount';
+        input.min = 4;
+        input.max = 20;
+        input.value = config.teamCount || 10;
+        field.appendChild(input);
+        card.appendChild(field);
+    }
+
+    function renderTeamNames(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Team Names';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'Enter team names from worst record to best (standings order).';
+        card.appendChild(subtitle);
+
+        const labels = generateTeamLabels(config.teamCount);
+        const list = document.createElement('div');
+        list.className = 'wizard-team-list';
+
+        for (let i = 0; i < config.teamCount; i++) {
+            const item = document.createElement('div');
+            item.className = 'wizard-team-item';
+
+            const label = document.createElement('label');
+            label.textContent = labels[i] + ':';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'wiz-team-name';
+            input.placeholder = `Team ${i + 1}`;
+            input.value = config.teamNames[i] || '';
+            input.dataset.index = i;
+
+            item.appendChild(label);
+            item.appendChild(input);
+            list.appendChild(item);
+        }
+
+        card.appendChild(list);
+    }
+
+    function renderLotteryStructure(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Lottery Structure';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'Define how picks are determined.';
+        card.appendChild(subtitle);
+
+        const fields = [
+            { id: 'wizDrawnPicks', label: 'Picks drawn by lottery:', value: config.drawnPicks, min: 1 },
+            { id: 'wizByRecordPicks', label: 'Picks assigned by reverse record:', value: config.byRecordPicks, min: 0 }
+        ];
+
+        fields.forEach(f => {
+            const row = document.createElement('div');
+            row.className = 'wizard-structure-row';
+            const label = document.createElement('label');
+            label.textContent = f.label;
+            label.setAttribute('for', f.id);
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = f.id;
+            input.min = f.min;
+            input.max = config.teamCount;
+            input.value = f.value;
+            input.addEventListener('input', updateStructureSummary);
+            row.appendChild(label);
+            row.appendChild(input);
+            card.appendChild(row);
+        });
+
+        const summary = document.createElement('div');
+        summary.className = 'wizard-structure-summary';
+        summary.id = 'structureSummary';
+        card.appendChild(summary);
+
+        function updateStructureSummary() {
+            const drawn = parseInt(document.getElementById('wizDrawnPicks')?.value) || 0;
+            const byRecord = parseInt(document.getElementById('wizByRecordPicks')?.value) || 0;
+            const locked = config.teamCount - drawn - byRecord;
+            const s = document.getElementById('structureSummary');
+            if (s) {
+                if (locked < 0) {
+                    s.textContent = `Error: drawn + by-record exceeds team count (${config.teamCount}).`;
+                    s.style.color = 'var(--danger)';
+                } else {
+                    s.textContent = `${drawn} drawn by lottery, ${byRecord} by reverse record, ${locked} locked by standings.`;
+                    s.style.color = 'var(--text-secondary)';
+                }
+            }
+        }
+        setTimeout(updateStructureSummary, 0);
+    }
+
+    function renderCombinations(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Lottery Combinations';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'Assign combination counts for each lottery-eligible team. Must sum to 1,000.';
+        card.appendChild(subtitle);
+
+        const helper = document.createElement('p');
+        helper.className = 'wizard-field helper-text';
+        helper.textContent = 'By-record teams need combinations because they participate in the lottery pool — if their number is drawn, they jump into a drawn pick slot.';
+        card.appendChild(helper);
+
+        const lotteryEligible = config.drawnPicks + config.byRecordPicks;
+        const labels = generateTeamLabels(config.teamCount);
+        const list = document.createElement('div');
+        list.className = 'wizard-combo-list';
+
+        for (let i = 0; i < lotteryEligible; i++) {
+            const item = document.createElement('div');
+            item.className = 'wizard-combo-item';
+
+            const label = document.createElement('label');
+            label.textContent = labels[i] + ':';
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'wiz-combo';
+            input.min = 1;
+            input.max = 999;
+            input.value = config.combinations[i] || '';
+            input.dataset.index = i;
+            input.addEventListener('input', updateComboTotal);
+
+            item.appendChild(label);
+            item.appendChild(input);
+            list.appendChild(item);
+        }
+        card.appendChild(list);
+
+        const totalDisplay = document.createElement('div');
+        totalDisplay.className = 'wizard-combo-total';
+        totalDisplay.id = 'comboTotal';
+        card.appendChild(totalDisplay);
+
+        function updateComboTotal() {
+            const inputs = card.querySelectorAll('.wiz-combo');
+            let sum = 0;
+            inputs.forEach(inp => { sum += parseInt(inp.value) || 0; });
+            const el = document.getElementById('comboTotal');
+            if (el) {
+                el.textContent = `Total: ${sum} / 1,000`;
+                el.className = 'wizard-combo-total ' + (sum === 1000 ? 'valid' : 'invalid');
+            }
+        }
+        setTimeout(updateComboTotal, 0);
+    }
+
+    function renderDraftRounds(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Draft Rounds';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'How many rounds in your draft?';
+        card.appendChild(subtitle);
+
+        const field = document.createElement('div');
+        field.className = 'wizard-field';
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = 'wizRounds';
+        input.min = 1;
+        input.max = 10;
+        input.value = config.rounds || 3;
+        field.appendChild(input);
+        card.appendChild(field);
+    }
+
+    function validateStep() {
+        switch (currentStep) {
+            case 0: {
+                const name = document.getElementById('wizLeagueName')?.value.trim();
+                if (!name) { showToast('Please enter a league name.'); return false; }
+                config.leagueName = name;
+                return true;
+            }
+            case 1: {
+                const count = parseInt(document.getElementById('wizTeamCount')?.value);
+                if (!count || count < 4 || count > 20) { showToast('Team count must be between 4 and 20.'); return false; }
+                config.teamCount = count;
+                if (config.teamNames.length > count) config.teamNames = config.teamNames.slice(0, count);
+                if (config.drawnPicks + config.byRecordPicks > count) {
+                    config.drawnPicks = Math.min(config.drawnPicks, count);
+                    config.byRecordPicks = Math.min(config.byRecordPicks, count - config.drawnPicks);
+                }
+                return true;
+            }
+            case 2: {
+                const inputs = document.querySelectorAll('.wiz-team-name');
+                const names = [];
+                const seen = new Set();
+                for (const inp of inputs) {
+                    const val = inp.value.trim();
+                    if (!val) { showToast('Please enter a name for every team.'); return false; }
+                    if (seen.has(val.toLowerCase())) { showToast('Each team name must be unique.'); return false; }
+                    seen.add(val.toLowerCase());
+                    names.push(val);
+                }
+                config.teamNames = names;
+                return true;
+            }
+            case 3: {
+                const drawn = parseInt(document.getElementById('wizDrawnPicks')?.value);
+                const byRecord = parseInt(document.getElementById('wizByRecordPicks')?.value);
+                if (!drawn || drawn < 1) { showToast('At least 1 pick must be drawn by lottery.'); return false; }
+                if (byRecord < 0 || isNaN(byRecord)) { showToast('By-record picks must be 0 or more.'); return false; }
+                if (drawn + byRecord > config.teamCount) { showToast('Drawn + by-record cannot exceed team count.'); return false; }
+                config.drawnPicks = drawn;
+                config.byRecordPicks = byRecord;
+                const eligible = drawn + byRecord;
+                if (config.combinations.length > eligible) {
+                    config.combinations = config.combinations.slice(0, eligible);
+                }
+                return true;
+            }
+            case 4: {
+                const inputs = document.querySelectorAll('.wiz-combo');
+                const combos = [];
+                let sum = 0;
+                for (const inp of inputs) {
+                    const val = parseInt(inp.value);
+                    if (!val || val < 1) { showToast('Each team must have at least 1 combination.'); return false; }
+                    if (!Number.isInteger(val)) { showToast('Combinations must be whole numbers.'); return false; }
+                    combos.push(val);
+                    sum += val;
+                }
+                if (sum !== 1000) { showToast(`Combinations must sum to 1,000. Current total: ${sum}.`); return false; }
+                config.combinations = combos;
+                return true;
+            }
+            case 5: {
+                const rounds = parseInt(document.getElementById('wizRounds')?.value);
+                if (!rounds || rounds < 1 || rounds > 10) { showToast('Rounds must be between 1 and 10.'); return false; }
+                config.rounds = rounds;
+                return true;
+            }
+        }
+        return true;
+    }
+
+    function finishWizard() {
+        localStorage.removeItem(LS_KEY_TEAM_NAMES);
+        localStorage.removeItem(LS_KEY_TEAMS_LOCKED);
+        localStorage.removeItem(LS_KEY_PICK_OWNERSHIP_LOCKED);
+        localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+
+        saveLeagueConfig(config);
+        overlay.style.display = 'none';
+        document.querySelector('.container').style.display = '';
+        initApp();
+    }
+
+    render();
+}
+
+// ============================================
 // TOAST NOTIFICATIONS (replaces alert())
 // ============================================
 
