@@ -1286,7 +1286,7 @@ function runLottery() {
 
     const title = document.createElement('h2');
     title.className = 'lottery-title';
-    title.textContent = `The People's Dynasty League Draft Lottery (Magic Number: ${magicNumber})`;
+    title.textContent = `${leagueConfig.leagueName} Draft Lottery (Magic Number: ${magicNumber})`;
     contentContainer.appendChild(title);
 
     const animationContainer = document.createElement('div');
@@ -1312,7 +1312,12 @@ function runLottery() {
             podiumContainer.setAttribute('role', 'list');
             podiumContainer.setAttribute('aria-label', `Quick lottery results ${currentIteration + 1} of ${magicNumber - 1}`);
 
-            [2, 1, 0].forEach((place) => {
+            const quickPodiumCount = Math.min(leagueConfig.drawnPicks, 3);
+            const quickPositions = [];
+            if (quickPodiumCount >= 3) quickPositions.push(2);
+            if (quickPodiumCount >= 1) quickPositions.push(0);
+            if (quickPodiumCount >= 2) quickPositions.push(1);
+            quickPositions.forEach((place) => {
                 const podiumPlace = document.createElement('div');
                 podiumPlace.className = `podium-place ${place === 0 ? 'first' : place === 1 ? 'second' : 'third'}`;
                 podiumPlace.setAttribute('role', 'listitem');
@@ -1361,29 +1366,36 @@ function runLottery() {
             revealAutomaticPicks();
         }, CALCULATING_DELAY_MS);
 
-        // Step 1: Reveal picks 10-5
+        // Step 1: Reveal picks teamCount down to drawnPicks+1 (locked + by-record)
         function revealAutomaticPicks() {
+            const autoCount = leagueConfig.lockedPicks + leagueConfig.byRecordPicks;
+            // If nothing to reveal automatically, go straight to podium
+            if (autoCount === 0) {
+                revealTopFour();
+                return;
+            }
+
             animationContainer.innerHTML = '';
 
             const batchHeader = document.createElement('div');
             batchHeader.className = 'batch-header';
-            batchHeader.textContent = 'Picks 10 through 5';
+            batchHeader.textContent = `Picks ${leagueConfig.teamCount} through ${leagueConfig.drawnPicks + 1}`;
             animationContainer.appendChild(batchHeader);
 
             const picksWrapper = document.createElement('div');
             picksWrapper.className = 'automatic-picks-wrapper';
             animationContainer.appendChild(picksWrapper);
 
-            let currentIndex = 9;
+            let currentIndex = leagueConfig.teamCount - 1;
 
             function showNextPick() {
-                if (currentIndex >= 4) {
+                if (currentIndex >= leagueConfig.drawnPicks) {
                     const resultItem = document.createElement('div');
                     resultItem.className = 'fullscreen-result-item';
                     const pickNumber = currentIndex + 1;
                     resultItem.textContent = `Pick ${pickNumber}: ${results[currentIndex].name}`;
 
-                    if (currentIndex >= 6) {
+                    if (currentIndex >= leagueConfig.drawnPicks + leagueConfig.byRecordPicks) {
                         resultItem.classList.add('pick-auto');
                     } else {
                         resultItem.classList.add('pick-lottery');
@@ -1408,7 +1420,7 @@ function runLottery() {
 
                     currentIndex--;
 
-                    if (currentIndex >= 4) {
+                    if (currentIndex >= leagueConfig.drawnPicks) {
                         setTimeout(showNextPick, PICK_DELAY_MS);
                     } else {
                         setTimeout(() => {
@@ -1430,14 +1442,52 @@ function runLottery() {
             showNextPick();
         }
 
-        // Step 2: Reveal top 4 picks
+        // Step 2: Reveal top drawn picks (podium)
         function revealTopFour() {
+            animationContainer.innerHTML = '';
+            animationContainer.classList.add('top-four-stage');
+
+            const podiumCount = Math.min(leagueConfig.drawnPicks, 6);
+            // If drawnPicks > 6, first reveal picks 7..drawnPicks in auto style
+            if (leagueConfig.drawnPicks > 6) {
+                revealExtraDrawnPicks(() => revealPodium(podiumCount));
+                return;
+            }
+            revealPodium(podiumCount);
+
+            function revealExtraDrawnPicks(callback) {
+                const extraHeader = document.createElement('div');
+                extraHeader.className = 'batch-header';
+                extraHeader.textContent = `Picks ${leagueConfig.drawnPicks} through 7`;
+                animationContainer.appendChild(extraHeader);
+
+                const extraWrapper = document.createElement('div');
+                extraWrapper.className = 'automatic-picks-wrapper';
+                animationContainer.appendChild(extraWrapper);
+
+                let idx = leagueConfig.drawnPicks - 1;
+                function showExtra() {
+                    if (idx >= 6) {
+                        const item = document.createElement('div');
+                        item.className = 'fullscreen-result-item pick-lottery';
+                        item.textContent = `Pick ${idx + 1}: ${results[idx].name}`;
+                        if (extraWrapper.firstChild) extraWrapper.insertBefore(item, extraWrapper.firstChild);
+                        else extraWrapper.appendChild(item);
+                        idx--;
+                        if (idx >= 6) setTimeout(showExtra, PICK_DELAY_MS);
+                        else setTimeout(() => { animationContainer.innerHTML = ''; callback(); }, NEXT_BUTTON_DELAY_MS);
+                    }
+                }
+                showExtra();
+            }
+
+            function revealPodium(podiumCount) {
             animationContainer.innerHTML = '';
             animationContainer.classList.add('top-four-stage');
 
             const batchHeader = document.createElement('div');
             batchHeader.className = 'batch-header batch-header-lg';
-            batchHeader.textContent = `Top ${Math.min(leagueConfig.drawnPicks, 6)} Draft Picks`;
+            batchHeader.textContent = `Top ${podiumCount} Draft Picks`;
             animationContainer.appendChild(batchHeader);
 
             const drumrollArea = document.createElement('div');
@@ -1447,15 +1497,19 @@ function runLottery() {
             const podiumContainer = document.createElement('div');
             podiumContainer.className = 'top-four-podium';
             podiumContainer.setAttribute('role', 'list');
-            podiumContainer.setAttribute('aria-label', `Top ${Math.min(leagueConfig.drawnPicks, 6)} draft picks`);
+            podiumContainer.setAttribute('aria-label', `Top ${podiumCount} draft picks`);
             animationContainer.appendChild(podiumContainer);
 
-            const positions = [
-                { order: 0, position: 3, cssClass: 'pos-4' },
-                { order: 1, position: 2, cssClass: 'pos-3' },
-                { order: 2, position: 0, cssClass: 'pos-1' },
-                { order: 3, position: 1, cssClass: 'pos-2' }
-            ];
+            // Build positions array: reveal worst-to-best, swap last two for drama
+            const positions = [];
+            for (let i = podiumCount - 1; i >= 0; i--) {
+                positions.push({ position: i, cssClass: `pos-${i + 1}` });
+            }
+            // Swap last two so #1 is revealed last (more drama)
+            if (positions.length >= 2) {
+                const len = positions.length;
+                [positions[len - 2], positions[len - 1]] = [positions[len - 1], positions[len - 2]];
+            }
 
             positions.forEach(pos => {
                 const placeholder = document.createElement('div');
@@ -1477,10 +1531,9 @@ function runLottery() {
                 const drumroll = document.createElement('div');
                 drumroll.className = 'fullscreen-drumroll';
 
-                const pickLabels = ['1st', '2nd', '3rd', '4th'];
                 const colorClasses = ['pick-gold', 'pick-silver', 'pick-bronze', 'pick-fourth'];
-                drumroll.classList.add(colorClasses[position]);
-                drumroll.textContent = `The team picking ${pickLabels[position]} in this years draft will be...`;
+                drumroll.classList.add(colorClasses[Math.min(position, 3)]);
+                drumroll.textContent = `The team picking ${formatOrdinal(position + 1)} in this year's draft will be...`;
 
                 if (jumperInfo) {
                     const chaosLine = document.createElement('div');
@@ -1501,8 +1554,7 @@ function runLottery() {
                     const placeholder = podiumContainer.querySelector(`.podium-placeholder.pos-${position + 1}`);
 
                     const podiumPlace = document.createElement('div');
-                    const placeClasses = ['place-1', 'place-2', 'place-3', 'place-4'];
-                    podiumPlace.className = `top-podium-place ${placeClasses[position]}`;
+                    podiumPlace.className = `top-podium-place place-${position + 1}`;
                     podiumPlace.setAttribute('role', 'listitem');
                     podiumPlace.setAttribute('aria-label', `${formatOrdinal(position + 1)} pick: ${results[position].name}${jumperHighlight ? ' — Lucky Leap upset!' : ''}`);
 
@@ -1528,7 +1580,7 @@ function runLottery() {
                         const chaosBadge = document.createElement('div');
                         chaosBadge.className = 'lucky-leap-badge';
                         chaosBadge.textContent = '\u2B06 Lucky Leap!';
-                        chaosBadge.setAttribute('aria-label', `Upset: ${results[position].name} jumped into the top 4`);
+                        chaosBadge.setAttribute('aria-label', `Upset: ${results[position].name} jumped into the top ${leagueConfig.drawnPicks}`);
                         podiumPlace.appendChild(chaosBadge);
                     }
 
@@ -1581,6 +1633,7 @@ function runLottery() {
             setTimeout(() => {
                 revealPodiumPlace(0);
             }, REVEAL_START_DELAY_MS);
+            } // end revealPodium
         }
     }
 
