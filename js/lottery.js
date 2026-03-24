@@ -1094,11 +1094,11 @@ function analyzeLotteryJumps(results) {
 
 function getFullDraftOrderData(lotteryResults) {
     const rows = [];
-    for (let round = 0; round < 3; round++) {
-        for (let pick = 0; pick < 10; pick++) {
+    for (let round = 0; round < leagueConfig.rounds; round++) {
+        for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
             const originalTeamIndex = lotteryResults[pick].name === teams[pick].name ? pick : teams.findIndex(t => t.name === lotteryResults[pick].name);
             const ownerTeamIndex = pickOwnership[round][originalTeamIndex] !== null ? pickOwnership[round][originalTeamIndex] : originalTeamIndex;
-            const pickNumber = round * 10 + pick + 1;
+            const pickNumber = round * leagueConfig.teamCount + pick + 1;
             const teamName = teams[ownerTeamIndex].name;
             const viaName = ownerTeamIndex !== originalTeamIndex ? teams[originalTeamIndex].name : null;
             rows.push({ pickNumber, teamName, viaName });
@@ -1113,7 +1113,7 @@ function updateFullDraftOrder(lotteryResults) {
 
     fullDraftOrderDiv.innerHTML = '';
 
-    for (let round = 0; round < 3; round++) {
+    for (let round = 0; round < leagueConfig.rounds; round++) {
         const roundDiv = document.createElement('div');
         roundDiv.className = 'draft-round';
 
@@ -1122,7 +1122,7 @@ function updateFullDraftOrder(lotteryResults) {
         roundTitle.textContent = `Round ${round + 1}`;
         roundDiv.appendChild(roundTitle);
 
-        for (let pick = 0; pick < 10; pick++) {
+        for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
             const originalTeamIndex = lotteryResults[pick].name === teams[pick].name ? pick : teams.findIndex(team => team.name === lotteryResults[pick].name);
             const ownerTeamIndex = pickOwnership[round][originalTeamIndex] !== null ? pickOwnership[round][originalTeamIndex] : originalTeamIndex;
 
@@ -1131,7 +1131,7 @@ function updateFullDraftOrder(lotteryResults) {
 
             const pickNumber = document.createElement('span');
             pickNumber.className = 'draft-pick-number';
-            pickNumber.textContent = `${round * 10 + pick + 1}.`;
+            pickNumber.textContent = `${round * leagueConfig.teamCount + pick + 1}.`;
 
             const pickTeam = document.createElement('span');
             pickTeam.className = 'draft-pick-team';
@@ -1184,7 +1184,7 @@ function downloadFullDraftOrder(lotteryResults) {
     const lines = [];
     let round = 1;
     for (let i = 0; i < rows.length; i++) {
-        if (i % 10 === 0) {
+        if (i % leagueConfig.teamCount === 0) {
             if (i > 0) lines.push('');
             lines.push(`Round ${round}`);
             round++;
@@ -1195,20 +1195,20 @@ function downloadFullDraftOrder(lotteryResults) {
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'draft-order-full.txt';
+    a.download = `${sanitizeFilename(leagueConfig.leagueName)}-draft-order-full.txt`;
     a.click();
     URL.revokeObjectURL(a.href);
 }
 
 function downloadOriginalTop10(lotteryResults) {
     const lines = ['Round 1 – original lottery order (before trades)', ''];
-    for (let i = 0; i < 10 && i < lotteryResults.length; i++) {
+    for (let i = 0; i < leagueConfig.teamCount && i < lotteryResults.length; i++) {
         lines.push(`${i + 1}. ${lotteryResults[i].name}`);
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'draft-order-original-top10.txt';
+    a.download = `${sanitizeFilename(leagueConfig.leagueName)}-lottery-results.txt`;
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -1613,7 +1613,7 @@ function updateResultsDiv(results) {
 
         if (i < 3) {
             resultItem.classList.add(pickClasses[i]);
-        } else if (i >= 6) {
+        } else if (i >= leagueConfig.drawnPicks + leagueConfig.byRecordPicks) {
             resultItem.classList.add('pick-auto');
         }
 
