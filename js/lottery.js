@@ -1016,16 +1016,17 @@ function createPickOwnershipTable() {
 // ============================================
 
 function runQuickLottery() {
-    const lotteryTeams = teams.slice(0, 6).map((team, index) => ({
+    const lotteryEligible = leagueConfig.drawnPicks + leagueConfig.byRecordPicks;
+    const lotteryTeams = teams.slice(0, lotteryEligible).map((team, index) => ({
         ...team,
         originalIndex: index
     }));
-    const results = new Array(10);
+    const results = new Array(leagueConfig.teamCount);
     const drawnIndices = new Set();
     const drawnTeams = [];
     let discardedRedraws = 0;
 
-    for (let pick = 0; pick < 4; pick++) {
+    for (let pick = 0; pick < leagueConfig.drawnPicks; pick++) {
         while (true) {
             const r = Math.random() * TOTAL_POOL;
             if (r >= ASSIGNED) { discardedRedraws++; continue; }
@@ -1048,9 +1049,9 @@ function runQuickLottery() {
     const remaining = lotteryTeams.filter(t => !drawnIndices.has(t.originalIndex));
     remaining.sort((a, b) => a.originalIndex - b.originalIndex);
 
-    const top6Picks = [...drawnTeams, ...remaining];
-    for (let i = 0; i < 6; i++) results[i] = top6Picks[i];
-    for (let i = 6; i < 10; i++) results[i] = teams[i];
+    const lotteryPicks = [...drawnTeams, ...remaining];
+    for (let i = 0; i < lotteryEligible; i++) results[i] = lotteryPicks[i];
+    for (let i = lotteryEligible; i < leagueConfig.teamCount; i++) results[i] = teams[i];
 
     const mapped = results.map(team => {
         const teamIndex = typeof team.originalIndex === 'number'
@@ -1065,15 +1066,15 @@ function runQuickLottery() {
 function analyzeLotteryJumps(results) {
     const jumpers = [];
     const fallers = [];
-    const TOP_FOUR_SEED_MAX = 3;
+    const drawnSeedMax = leagueConfig.drawnPicks - 1;
 
     results.forEach((team, index) => {
         if (!team || typeof team.originalIndex !== 'number') return;
 
-        if (index < 4 && team.originalIndex > TOP_FOUR_SEED_MAX) {
+        if (index < leagueConfig.drawnPicks && team.originalIndex > drawnSeedMax) {
             jumpers.push({ team, pick: index + 1, fromSeed: team.originalIndex + 1 });
         }
-        if ((index === 4 || index === 5) && team.originalIndex <= TOP_FOUR_SEED_MAX) {
+        if (index >= leagueConfig.drawnPicks && index < leagueConfig.drawnPicks + leagueConfig.byRecordPicks && team.originalIndex <= drawnSeedMax) {
             fallers.push({ team, pick: index + 1, fromSeed: team.originalIndex + 1 });
         }
     });
@@ -1394,8 +1395,8 @@ function runLottery() {
 
                         const chaosNote = document.createElement('div');
                         chaosNote.className = 'chaos-note';
-                        chaosNote.textContent = `\u2B07 Shock drop! ${fallInfo.team.name} fell out of the Top 4.`;
-                        chaosNote.setAttribute('aria-label', `Shock drop: ${fallInfo.team.name} fell out of the Top 4`);
+                        chaosNote.textContent = `\u2B07 Shock drop! ${fallInfo.team.name} fell out of the Top ${leagueConfig.drawnPicks}.`;
+                        chaosNote.setAttribute('aria-label', `Shock drop: ${fallInfo.team.name} fell out of the Top ${leagueConfig.drawnPicks}`);
                         resultItem.appendChild(chaosNote);
                     }
 
@@ -1413,7 +1414,7 @@ function runLottery() {
                         setTimeout(() => {
                             const nextButton = document.createElement('button');
                             nextButton.type = 'button';
-                            nextButton.textContent = 'Reveal Top 4 Picks';
+                            nextButton.textContent = `Reveal Top ${Math.min(leagueConfig.drawnPicks, 6)} Picks`;
                             nextButton.className = 'lottery-button reveal-top4-btn';
                             nextButton.addEventListener('click', () => {
                                 animationContainer.innerHTML = '';
@@ -1436,7 +1437,7 @@ function runLottery() {
 
             const batchHeader = document.createElement('div');
             batchHeader.className = 'batch-header batch-header-lg';
-            batchHeader.textContent = 'Top 4 Draft Picks';
+            batchHeader.textContent = `Top ${Math.min(leagueConfig.drawnPicks, 6)} Draft Picks`;
             animationContainer.appendChild(batchHeader);
 
             const drumrollArea = document.createElement('div');
@@ -1446,7 +1447,7 @@ function runLottery() {
             const podiumContainer = document.createElement('div');
             podiumContainer.className = 'top-four-podium';
             podiumContainer.setAttribute('role', 'list');
-            podiumContainer.setAttribute('aria-label', 'Top 4 draft picks');
+            podiumContainer.setAttribute('aria-label', `Top ${Math.min(leagueConfig.drawnPicks, 6)} draft picks`);
             animationContainer.appendChild(podiumContainer);
 
             const positions = [
