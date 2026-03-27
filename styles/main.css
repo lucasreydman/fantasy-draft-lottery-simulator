@@ -185,43 +185,43 @@ input[type="number"] {
 }
 
 .config-action-btn {
-    background: transparent;
+    background: var(--color-bg-elevated);
     border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-    padding: 0.4rem 0.85rem;
+    color: var(--color-text);
+    padding: 0.5rem 1.1rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.82rem;
+    font-weight: 600;
     font-family: inherit;
     letter-spacing: 0.02em;
-    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .config-action-btn:hover {
     border-color: var(--color-primary);
-    color: var(--color-text);
-    background: rgba(59, 130, 246, 0.08);
+    background: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .back-to-presets-btn {
-    background: transparent;
+    background: var(--color-bg-elevated);
     border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-    padding: 0.4rem 0.85rem;
+    color: var(--color-text);
+    padding: 0.5rem 1.1rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.82rem;
+    font-weight: 600;
     font-family: inherit;
     letter-spacing: 0.02em;
-    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .back-to-presets-btn:hover {
     border-color: var(--color-text-muted);
-    color: var(--color-text);
-    background: rgba(148, 163, 184, 0.08);
+    background: rgba(148, 163, 184, 0.12);
+    box-shadow: 0 0 0 1px var(--color-text-muted);
 }
 
 /* ============================================
@@ -2044,19 +2044,25 @@ h2::before {
 }
 
 .reconfigure-button {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: 6px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.85rem;
-    transition: all var(--transition-base);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+    margin-top: var(--space-sm);
 }
 
 .reconfigure-button:hover {
-    color: var(--text-primary);
-    border-color: var(--primary);
+    color: var(--color-text);
+    border-color: var(--color-primary);
+    background: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .wizard-structure-row {
@@ -2233,7 +2239,51 @@ h2::before {
     border-radius: 0 6px 6px 0;
 }
 
+/* ============================================
+   SITE FOOTER
+   ============================================ */
+.site-footer {
+    text-align: center;
+    padding: var(--space-xl) var(--space-md);
+    color: var(--color-text-dim);
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    border-top: 1px solid var(--color-border-subtle);
+    margin-top: var(--space-md);
+}
 
+.site-footer a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--transition-fast);
+}
+
+.site-footer a:hover {
+    color: var(--color-primary);
+}
+
+/* ============================================
+   PICK OWNERSHIP PRESET BUTTON
+   ============================================ */
+.pick-ownership-preset-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.pick-ownership-preset-btn:hover {
+    border-color: var(--color-success);
+    color: var(--color-success);
+    background: rgba(34, 197, 94, 0.08);
+}
 .lottery-button {
     min-height: 48px;
 }
@@ -2262,3 +2312,4 @@ h2::before {
         display: none;
     }
 }
+

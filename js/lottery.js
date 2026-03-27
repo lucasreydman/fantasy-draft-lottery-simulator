@@ -1406,6 +1406,24 @@ function createPickOwnershipTable() {
         actionsContainer.style.display = '';
         actionsContainer.innerHTML = '';
 
+        if (!pickOwnershipLocked) {
+            const ownPicksBtn = document.createElement('button');
+            ownPicksBtn.type = 'button';
+            ownPicksBtn.className = 'pick-ownership-preset-btn';
+            ownPicksBtn.textContent = 'Assign Own Picks';
+            ownPicksBtn.title = 'Each team owns their own pick in every round';
+            ownPicksBtn.addEventListener('click', () => {
+                for (let r = 0; r < leagueConfig.rounds; r++) {
+                    for (let p = 0; p < leagueConfig.teamCount; p++) {
+                        pickOwnership[r][p] = p;
+                    }
+                }
+                savePickOwnership();
+                createPickOwnershipTable();
+            });
+            actionsContainer.appendChild(ownPicksBtn);
+        }
+
         confirmPickOwnershipButton = document.createElement('button');
         confirmPickOwnershipButton.type = 'button';
         confirmPickOwnershipButton.id = 'confirmPickOwnership';
