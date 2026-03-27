@@ -65,7 +65,7 @@ const LEAGUE_PRESETS = [
         id: 'fantasy_football',
         icon: '🏈',
         sport: 'Fantasy Football',
-        tagline: '12 teams · 15 rounds · Snake draft',
+        tagline: '12 teams · 5 rounds · Snake draft',
         config: {
             leagueName: 'Fantasy Football League',
             teamCount: 12,
@@ -77,7 +77,7 @@ const LEAGUE_PRESETS = [
             drawnPicks: 4,
             byRecordPicks: 8,
             combinations: generateWeights(12),
-            rounds: 15,
+            rounds: 5,
             draftFormat: 'snake',
             floorPicks: 2,
         }
@@ -86,7 +86,7 @@ const LEAGUE_PRESETS = [
         id: 'fantasy_basketball',
         icon: '🏀',
         sport: 'Fantasy Basketball',
-        tagline: '10 teams · 13 rounds · Snake draft',
+        tagline: '10 teams · 3 rounds · Snake draft',
         config: {
             leagueName: 'Fantasy Basketball League',
             teamCount: 10,
@@ -98,7 +98,7 @@ const LEAGUE_PRESETS = [
             drawnPicks: 3,
             byRecordPicks: 7,
             combinations: generateWeights(10),
-            rounds: 13,
+            rounds: 3,
             draftFormat: 'snake',
             floorPicks: 0,
         }
@@ -107,7 +107,7 @@ const LEAGUE_PRESETS = [
         id: 'fantasy_hockey',
         icon: '🏒',
         sport: 'Fantasy Hockey',
-        tagline: '10 teams · 20 rounds · Snake draft',
+        tagline: '10 teams · 3 rounds · Snake draft',
         config: {
             leagueName: 'Fantasy Hockey League',
             teamCount: 10,
@@ -119,7 +119,7 @@ const LEAGUE_PRESETS = [
             drawnPicks: 3,
             byRecordPicks: 7,
             combinations: generateWeights(10),
-            rounds: 20,
+            rounds: 3,
             draftFormat: 'snake',
             floorPicks: 0,
         }
@@ -128,7 +128,7 @@ const LEAGUE_PRESETS = [
         id: 'fantasy_baseball',
         icon: '⚾',
         sport: 'Fantasy Baseball',
-        tagline: '12 teams · 23 rounds · Snake draft',
+        tagline: '12 teams · 5 rounds · Snake draft',
         config: {
             leagueName: 'Fantasy Baseball League',
             teamCount: 12,
@@ -140,7 +140,7 @@ const LEAGUE_PRESETS = [
             drawnPicks: 4,
             byRecordPicks: 8,
             combinations: generateWeights(12),
-            rounds: 23,
+            rounds: 5,
             draftFormat: 'snake',
             floorPicks: 0,
         }
