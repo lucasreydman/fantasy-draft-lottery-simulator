@@ -166,6 +166,8 @@ input[type="number"] {
     letter-spacing: -0.02em;
     margin-bottom: var(--space-sm);
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .league-header .subtitle {
@@ -254,6 +256,7 @@ h2 {
     margin-bottom: var(--space-lg);
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-sm);
 }
 
@@ -449,6 +452,7 @@ h2::before {
 .odds-table,
 .pick-ownership-table {
     width: 100%;
+    min-width: 360px; /* prevent collapse below readable width */
     border-collapse: separate;
     border-spacing: 0;
     border-radius: var(--radius-lg);
@@ -554,7 +558,7 @@ h2::before {
    ============================================ */
 .full-draft-order {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--space-xl);
     margin-top: var(--space-lg);
 }
@@ -602,6 +606,7 @@ h2::before {
 
 .draft-pick-team {
     flex: 1;
+    min-width: 0; /* required for text-overflow: ellipsis in flex */
     font-weight: 500;
     padding: 0 var(--space-md);
     white-space: nowrap;
@@ -610,16 +615,21 @@ h2::before {
 }
 
 .draft-pick-original {
-    flex: 0 0 auto;
+    flex: 0 1 auto; /* allow shrinking so it doesn't crush team name */
+    min-width: 0;
+    max-width: 45%;
     font-size: 0.8rem;
     color: var(--color-text-dim);
     font-style: italic;
     padding-left: var(--space-md);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .draft-order-downloads {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-top: var(--space-lg);
     justify-content: center;
@@ -1501,12 +1511,6 @@ h2::before {
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 1400px) {
-    .full-draft-order {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
 @media (max-width: 1024px) {
     .container {
         padding: var(--space-lg);
@@ -1546,10 +1550,6 @@ h2::before {
     }
 
     .team-inputs {
-        grid-template-columns: 1fr;
-    }
-
-    .full-draft-order {
         grid-template-columns: 1fr;
     }
 
@@ -1607,12 +1607,46 @@ h2::before {
 }
 
 @media (max-width: 480px) {
+    .league-header {
+        padding: var(--space-lg) var(--space-md);
+    }
+
     .league-header h1 {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
     }
 
     section {
         padding: var(--space-md);
+    }
+
+    /* Stack magic number label + input vertically on tiny screens */
+    .magic-number-input {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-sm);
+    }
+
+    .magic-number-label-group {
+        flex: 1 0 100%;
+        text-align: center;
+    }
+
+    .magic-number-help {
+        max-width: 100%;
+    }
+
+    /* Reduce wizard card padding so content has room */
+    .wizard-card {
+        padding: var(--space-lg);
+    }
+
+    /* Scale down podium blocks in the quick-iteration view */
+    .podium-block {
+        width: 90px;
+    }
+
+    .podium-team-name {
+        max-width: 80px;
     }
 
     .pick-timer-container {
