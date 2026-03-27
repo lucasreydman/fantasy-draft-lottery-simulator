@@ -806,11 +806,25 @@ function unlockTeams() {
     pickOwnershipLocked = false;
     saveTeamLockState();
     savePickOwnershipLockState();
+    // Clear stale pick ownership data so indices don't mismatch after team rename
+    localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+    pickOwnership = Array(leagueConfig.rounds).fill(null).map(() =>
+        Array(leagueConfig.teamCount).fill(null).map(() => null)
+    );
     applyTeamLockState();
     createPickOwnershipTable();
 }
 
 function lockPickOwnership() {
+    // Validate all picks are assigned before locking
+    for (let r = 0; r < pickOwnership.length; r++) {
+        for (let p = 0; p < pickOwnership[r].length; p++) {
+            if (pickOwnership[r][p] == null) {
+                showToast('All picks must be assigned before locking.', 'error');
+                return;
+            }
+        }
+    }
     pickOwnershipLocked = true;
     savePickOwnershipLockState();
     createPickOwnershipTable();
