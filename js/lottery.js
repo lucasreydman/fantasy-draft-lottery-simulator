@@ -19,6 +19,42 @@ const LS_KEY_TEAM_NAMES = 'lotteryTeamNames';
 const LS_KEY_TEAMS_LOCKED = 'lotteryTeamsLocked';
 const LS_KEY_PICK_OWNERSHIP_LOCKED = 'lotteryPickOwnershipLocked';
 const LS_KEY_PICK_OWNERSHIP = 'lotteryPickOwnership';
+const LS_KEY_HISTORY = 'lotteryHistory';
+
+// ============================================
+// NBA WEIGHT PRESETS (for auto-generate)
+// ============================================
+
+const NBA_WEIGHT_PRESETS = {
+    2:  [600, 400],
+    3:  [500, 300, 200],
+    4:  [450, 250, 185, 115],
+    5:  [400, 220, 175, 130, 75],
+    6:  [360, 200, 165, 130, 95, 50],
+    7:  [310, 185, 160, 130, 100, 70, 45],
+    8:  [280, 175, 155, 130, 105, 75, 50, 30],
+    9:  [250, 165, 150, 130, 110, 80, 55, 35, 25],
+    10: [220, 155, 145, 130, 115, 90, 65, 45, 25, 10],
+    11: [200, 145, 140, 125, 110, 90, 70, 55, 35, 20, 10],
+    12: [185, 135, 130, 120, 110, 90, 75, 60, 45, 30, 15, 5],
+    13: [170, 125, 120, 115, 105, 90, 80, 65, 55, 40, 20, 10, 5],
+    14: [140, 135, 130, 120, 105, 90, 75, 60, 50, 35, 25, 15, 10, 10],
+};
+
+function generateWeights(n) {
+    if (NBA_WEIGHT_PRESETS[n]) return [...NBA_WEIGHT_PRESETS[n]];
+    const base = NBA_WEIGHT_PRESETS[14];
+    const t = (n - 14) / (20 - 14);
+    let weights = Array.from({ length: n }, (_, i) => {
+        // Teams beyond the 14-slot preset inherit the last preset value (10) as their base
+        const baseVal = i < base.length ? base[i] : base[base.length - 1];
+        const flatVal = Math.floor(1000 / n);
+        return Math.round(baseVal * (1 - t) + flatVal * t);
+    });
+    const diff = 1000 - weights.reduce((a, b) => a + b, 0);
+    weights[0] += diff; // adjust worst-team slot to hit exactly 1000
+    return weights;
+}
 
 // ============================================
 // LEAGUE CONFIG
@@ -33,6 +69,8 @@ function loadLeagueConfig() {
         const config = JSON.parse(saved);
         if (!config || typeof config.teamCount !== 'number') return null;
         config.lockedPicks = config.teamCount - config.drawnPicks - config.byRecordPicks;
+        if (!config.draftFormat) config.draftFormat = 'snake';
+        if (config.floorPicks == null) config.floorPicks = 0;
         return config;
     } catch (e) {
         console.warn('Failed to load league config', e);
@@ -172,11 +210,19 @@ function showSetupWizard(existingConfig) {
         drawnPicks: 4,
         byRecordPicks: 2,
         combinations: [],
-        rounds: 3
+        rounds: 3,
+        draftFormat: 'snake',
+        floorPicks: 0
     };
+    if (!config.draftFormat) config.draftFormat = 'snake';
+    if (config.floorPicks == null) config.floorPicks = 0;
+
+    // Snapshot structural values BEFORE any wizard mutations
+    const oldTeamCount = config.teamCount;
+    const oldDrawnPicks = config.drawnPicks;
 
     let currentStep = 0;
-    const totalSteps = 6;
+    const totalSteps = 7;
 
     overlay.style.display = 'flex';
     document.querySelector('.container').style.display = 'none';
@@ -200,12 +246,13 @@ function showSetupWizard(existingConfig) {
         card.appendChild(progress);
 
         const stepRenderers = [
-            renderLeagueName,
-            renderTeamCount,
-            renderTeamNames,
-            renderLotteryStructure,
-            renderCombinations,
-            renderDraftRounds
+            renderLeagueName,       // 0
+            renderTeamCount,        // 1
+            renderTeamNames,        // 2
+            renderLotteryStructure, // 3
+            renderCombinations,     // 4
+            renderDraftFormat,      // 5 (new)
+            renderDraftRounds,      // 6 (was 5)
         ];
 
         stepRenderers[currentStep](card);
@@ -371,6 +418,28 @@ function showSetupWizard(existingConfig) {
         summary.id = 'structureSummary';
         card.appendChild(summary);
 
+        // Floor picks field
+        const floorField = document.createElement('div');
+        floorField.className = 'wizard-field';
+        floorField.style.marginTop = 'var(--space-md)';
+        const floorLabel = document.createElement('label');
+        floorLabel.setAttribute('for', 'wizFloor');
+        floorLabel.innerHTML = 'Guaranteed Top-N Floor <span style="color:var(--text-secondary);font-size:0.8rem">(optional)</span>';
+        const floorInput = document.createElement('input');
+        floorInput.type = 'number';
+        floorInput.id = 'wizFloor';
+        floorInput.min = 0;
+        floorInput.max = config.drawnPicks || 4;
+        floorInput.value = config.floorPicks || 0;
+        floorInput.style.width = '100%';
+        const floorNote = document.createElement('p');
+        floorNote.style.cssText = 'font-size:0.8rem;color:var(--text-secondary);margin-top:0.25rem;';
+        floorNote.textContent = 'Worst N teams guaranteed to land in top N picks. Set 0 to disable.';
+        floorField.appendChild(floorLabel);
+        floorField.appendChild(floorInput);
+        floorField.appendChild(floorNote);
+        card.appendChild(floorField);
+
         function updateStructureSummary() {
             const drawn = parseInt(document.getElementById('wizDrawnPicks')?.value) || 0;
             const byRecord = parseInt(document.getElementById('wizByRecordPicks')?.value) || 0;
@@ -430,6 +499,17 @@ function showSetupWizard(existingConfig) {
             item.appendChild(input);
             list.appendChild(item);
         }
+        const autoBtn = document.createElement('button');
+        autoBtn.type = 'button';
+        autoBtn.className = 'wizard-auto-btn';
+        autoBtn.textContent = 'Auto-generate (NBA-style weights)';
+        autoBtn.addEventListener('click', () => {
+            const weights = generateWeights(lotteryEligible);
+            const inputs = card.querySelectorAll('.wiz-combo');
+            inputs.forEach((inp, i) => { inp.value = weights[i] || 0; });
+            updateComboTotal();
+        });
+        card.appendChild(autoBtn);
         card.appendChild(list);
 
         const totalDisplay = document.createElement('div');
@@ -473,6 +553,53 @@ function showSetupWizard(existingConfig) {
         card.appendChild(field);
     }
 
+    function renderDraftFormat(card) {
+        const title = document.createElement('h2');
+        title.className = 'wizard-title';
+        title.textContent = 'Draft Format';
+        card.appendChild(title);
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'wizard-subtitle';
+        subtitle.textContent = 'How should pick order work after the lottery round?';
+        card.appendChild(subtitle);
+
+        const options = [
+            { value: 'snake', label: 'Snake Draft', desc: 'Odd rounds go 1→N, even rounds go N→1. Most common format.' },
+            { value: 'linear', label: 'Linear Draft', desc: 'Every round goes 1→N. Same order each round.' },
+        ];
+
+        const group = document.createElement('div');
+        group.className = 'wizard-format-group';
+        options.forEach(opt => {
+            const label = document.createElement('label');
+            label.className = 'wizard-format-card' + (config.draftFormat === opt.value ? ' selected' : '');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'draftFormat';
+            radio.value = opt.value;
+            radio.checked = config.draftFormat === opt.value;
+            radio.style.display = 'none';
+            const labelText = document.createElement('strong');
+            labelText.textContent = opt.label;
+            const descText = document.createElement('p');
+            descText.textContent = opt.desc;
+            descText.style.margin = '0.25rem 0 0';
+            descText.style.fontSize = '0.85rem';
+            descText.style.color = 'var(--text-secondary)';
+            label.appendChild(radio);
+            label.appendChild(labelText);
+            label.appendChild(descText);
+            label.addEventListener('click', () => {
+                card.querySelectorAll('.wizard-format-card').forEach(c => c.classList.remove('selected'));
+                label.classList.add('selected');
+                radio.checked = true;
+            });
+            group.appendChild(label);
+        });
+        card.appendChild(group);
+    }
+
     function validateStep() {
         switch (currentStep) {
             case 0: {
@@ -514,6 +641,8 @@ function showSetupWizard(existingConfig) {
                 if (drawn + byRecord > config.teamCount) { showToast('Drawn + by-record cannot exceed team count.'); return false; }
                 config.drawnPicks = drawn;
                 config.byRecordPicks = byRecord;
+                const floor = parseInt(document.getElementById('wizFloor')?.value) || 0;
+                config.floorPicks = Math.min(floor, drawn);
                 const eligible = drawn + byRecord;
                 if (config.combinations.length > eligible) {
                     config.combinations = config.combinations.slice(0, eligible);
@@ -536,6 +665,12 @@ function showSetupWizard(existingConfig) {
                 return true;
             }
             case 5: {
+                const selected = document.querySelector('input[name="draftFormat"]:checked');
+                if (!selected) { showToast('Please select a draft format.'); return false; }
+                config.draftFormat = selected.value;
+                return true;
+            }
+            case 6: {
                 const rounds = parseInt(document.getElementById('wizRounds')?.value);
                 if (!rounds || rounds < 1 || rounds > 10) { showToast('Rounds must be between 1 and 10.'); return false; }
                 config.rounds = rounds;
@@ -546,10 +681,13 @@ function showSetupWizard(existingConfig) {
     }
 
     function finishWizard() {
-        localStorage.removeItem(LS_KEY_TEAM_NAMES);
-        localStorage.removeItem(LS_KEY_TEAMS_LOCKED);
-        localStorage.removeItem(LS_KEY_PICK_OWNERSHIP_LOCKED);
-        localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+        const structureChanged = config.teamCount !== oldTeamCount || config.drawnPicks !== oldDrawnPicks;
+        if (structureChanged) {
+            localStorage.removeItem(LS_KEY_TEAM_NAMES);
+            localStorage.removeItem(LS_KEY_TEAMS_LOCKED);
+            localStorage.removeItem(LS_KEY_PICK_OWNERSHIP_LOCKED);
+            localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+        }
 
         saveLeagueConfig(config);
         overlay.style.display = 'none';
@@ -788,6 +926,74 @@ function validateTeamSelections() {
     return true;
 }
 
+// ============================================
+// PROGRESS TRACKER & SECTION BADGES
+// ============================================
+
+function setBadge(sectionEl, text, cls) {
+    if (!sectionEl) return;
+    let badge = sectionEl.querySelector('.section-badge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'section-badge';
+        const heading = sectionEl.querySelector('h2');
+        if (heading) heading.appendChild(badge);
+    }
+    badge.textContent = text;
+    badge.className = `section-badge ${cls}`;
+}
+
+function updateProgressTracker() {
+    const tracker = document.getElementById('progressTracker');
+    if (!tracker) return;
+    tracker.innerHTML = '';
+
+    const steps = [
+        { label: 'Team Names', done: teamsLocked },
+        { label: 'Pick Ownership', done: pickOwnershipLocked },
+        { label: 'Run Lottery', done: !!lastLotteryResult },
+    ];
+
+    steps.forEach((step, i) => {
+        const item = document.createElement('div');
+        item.className = 'progress-step' + (step.done ? ' done' : '') + (i === steps.findIndex(s => !s.done) ? ' active' : '');
+        const dot = document.createElement('span');
+        dot.className = 'progress-dot';
+        dot.textContent = step.done ? '✓' : (i + 1);
+        const label = document.createElement('span');
+        label.className = 'progress-label';
+        label.textContent = step.label;
+        item.appendChild(dot);
+        item.appendChild(label);
+        tracker.appendChild(item);
+
+        if (i < steps.length - 1) {
+            const line = document.createElement('div');
+            line.className = 'progress-line' + (step.done ? ' done' : '');
+            tracker.appendChild(line);
+        }
+    });
+}
+
+function updateSectionBadges() {
+    const teamSection = document.querySelector('.team-inputs-section');
+    const ownerSection = document.querySelector('.pick-ownership-section');
+
+    if (teamsLocked) {
+        setBadge(teamSection, 'Confirmed', 'badge-success');
+    } else {
+        setBadge(teamSection, 'Pending', 'badge-pending');
+    }
+
+    if (pickOwnershipLocked) {
+        setBadge(ownerSection, 'Confirmed', 'badge-success');
+    } else if (teamsLocked) {
+        setBadge(ownerSection, 'Pending', 'badge-pending');
+    } else {
+        setBadge(ownerSection, 'Locked', 'badge-locked');
+    }
+}
+
 function lockTeams() {
     const selects = document.querySelectorAll('.team-input-row input');
     selects.forEach((select, index) => {
@@ -799,6 +1005,8 @@ function lockTeams() {
     saveTeamLockState();
     applyTeamLockState();
     createPickOwnershipTable();
+    updateProgressTracker();
+    updateSectionBadges();
 }
 
 function unlockTeams() {
@@ -813,6 +1021,8 @@ function unlockTeams() {
     );
     applyTeamLockState();
     createPickOwnershipTable();
+    updateProgressTracker();
+    updateSectionBadges();
 }
 
 function lockPickOwnership() {
@@ -829,6 +1039,8 @@ function lockPickOwnership() {
     savePickOwnershipLockState();
     createPickOwnershipTable();
     applyTeamLockState();
+    updateProgressTracker();
+    updateSectionBadges();
 }
 
 function unlockPickOwnership() {
@@ -836,6 +1048,8 @@ function unlockPickOwnership() {
     savePickOwnershipLockState();
     createPickOwnershipTable();
     applyTeamLockState();
+    updateProgressTracker();
+    updateSectionBadges();
 }
 
 function applyLotteryButtonState() {
@@ -872,6 +1086,17 @@ function refreshOddsTableBody() {
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
+    // Build flat array of all odds values for heatmap scaling
+    const allVals = [];
+    for (let t = 0; t < lotteryEligible; t++) {
+        const teamOdds = leagueConfig.odds[t] || [];
+        for (let p = 0; p < lotteryEligible; p++) {
+            const v = teamOdds[p];
+            if (typeof v === 'number' && v > 0) allVals.push(v);
+        }
+    }
+    const maxVal = allVals.length ? Math.max(...allVals) : 100;
+
     // tbody
     const tbody = document.createElement('tbody');
     tbody.id = 'oddsTableBody';
@@ -885,6 +1110,11 @@ function refreshOddsTableBody() {
             const cell = document.createElement('td');
             const val = teamOdds[p];
             cell.textContent = typeof val === 'number' ? `${val.toFixed(1)}%` : '0.0%';
+            if (typeof val === 'number' && val > 0) {
+                const intensity = Math.round((val / maxVal) * 100);
+                cell.style.background = `rgba(59,130,246,${(intensity * 0.008).toFixed(3)})`;
+                if (intensity > 60) cell.style.color = '#fff';
+            }
             row.appendChild(cell);
         }
         tbody.appendChild(row);
@@ -1029,40 +1259,62 @@ function createPickOwnershipTable() {
 // LOTTERY LOGIC
 // ============================================
 
+function floorSatisfied(drawnTeams) {
+    const floor = leagueConfig.floorPicks || 0;
+    if (!floor) return true;
+    // Each of the worst `floor` teams must land in the top `floor` picks
+    for (let i = 0; i < floor; i++) {
+        if (!drawnTeams.slice(0, floor).some(t => t.originalIndex === i)) return false;
+    }
+    return true;
+}
+
 function runQuickLottery() {
     const lotteryEligible = leagueConfig.drawnPicks + leagueConfig.byRecordPicks;
     const lotteryTeams = teams.slice(0, lotteryEligible).map((team, index) => ({
         ...team,
         originalIndex: index
     }));
-    const results = new Array(leagueConfig.teamCount);
-    const drawnIndices = new Set();
-    const drawnTeams = [];
+
+    const MAX_ATTEMPTS = 500;
+    let attempt = 0;
+    let drawnTeams;
     let discardedRedraws = 0;
 
-    for (let pick = 0; pick < leagueConfig.drawnPicks; pick++) {
-        while (true) {
-            const r = Math.random() * TOTAL_POOL;
-            if (r >= ASSIGNED) { discardedRedraws++; continue; }
+    do {
+        const drawnIndices = new Set();
+        drawnTeams = [];
+        let redraws = 0;
 
-            let cumulative = 0;
-            let hitTeam = null;
-            for (let i = 0; i < lotteryTeams.length; i++) {
-                cumulative += lotteryTeams[i].chances;
-                if (r < cumulative) { hitTeam = lotteryTeams[i]; break; }
+        for (let pick = 0; pick < leagueConfig.drawnPicks; pick++) {
+            while (true) {
+                const r = Math.random() * TOTAL_POOL;
+                if (r >= ASSIGNED) { redraws++; continue; }
+
+                let cumulative = 0;
+                let hitTeam = null;
+                for (let i = 0; i < lotteryTeams.length; i++) {
+                    cumulative += lotteryTeams[i].chances;
+                    if (r < cumulative) { hitTeam = lotteryTeams[i]; break; }
+                }
+
+                if (drawnIndices.has(hitTeam.originalIndex)) { continue; }
+
+                drawnIndices.add(hitTeam.originalIndex);
+                drawnTeams.push(hitTeam);
+                break;
             }
-
-            if (drawnIndices.has(hitTeam.originalIndex)) { continue; }
-
-            drawnIndices.add(hitTeam.originalIndex);
-            drawnTeams.push(hitTeam);
-            break;
         }
-    }
 
+        discardedRedraws = redraws;
+        attempt++;
+    } while (!floorSatisfied(drawnTeams) && attempt < MAX_ATTEMPTS);
+
+    const drawnIndices = new Set(drawnTeams.map(t => t.originalIndex));
     const remaining = lotteryTeams.filter(t => !drawnIndices.has(t.originalIndex));
     remaining.sort((a, b) => a.originalIndex - b.originalIndex);
 
+    const results = new Array(leagueConfig.teamCount);
     const lotteryPicks = [...drawnTeams, ...remaining];
     for (let i = 0; i < lotteryEligible; i++) results[i] = lotteryPicks[i];
     for (let i = lotteryEligible; i < leagueConfig.teamCount; i++) results[i] = teams[i];
@@ -1108,14 +1360,17 @@ function analyzeLotteryJumps(results) {
 
 function getFullDraftOrderData(lotteryResults) {
     const rows = [];
+    const isSnake = leagueConfig.draftFormat !== 'linear';
+    let overallPick = 1;
     for (let round = 0; round < leagueConfig.rounds; round++) {
-        for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
+        const reversed = isSnake && round % 2 === 1;
+        for (let slot = 0; slot < leagueConfig.teamCount; slot++) {
+            const pick = reversed ? leagueConfig.teamCount - 1 - slot : slot;
             const originalTeamIndex = lotteryResults[pick].name === teams[pick].name ? pick : teams.findIndex(t => t.name === lotteryResults[pick].name);
             const ownerTeamIndex = pickOwnership[round][originalTeamIndex] !== null ? pickOwnership[round][originalTeamIndex] : originalTeamIndex;
-            const pickNumber = round * leagueConfig.teamCount + pick + 1;
             const teamName = teams[ownerTeamIndex].name;
             const viaName = ownerTeamIndex !== originalTeamIndex ? teams[originalTeamIndex].name : null;
-            rows.push({ pickNumber, teamName, viaName });
+            rows.push({ pickNumber: overallPick++, teamName, viaName });
         }
     }
     return rows;
@@ -1127,16 +1382,25 @@ function updateFullDraftOrder(lotteryResults) {
 
     fullDraftOrderDiv.innerHTML = '';
 
+    const isSnake = leagueConfig.draftFormat !== 'linear';
+    const formatLabel = document.createElement('p');
+    formatLabel.className = 'section-description';
+    formatLabel.textContent = isSnake ? 'Format: Snake Draft' : 'Format: Linear Draft';
+    fullDraftOrderDiv.appendChild(formatLabel);
+
+    let overallPick = 1;
     for (let round = 0; round < leagueConfig.rounds; round++) {
         const roundDiv = document.createElement('div');
         roundDiv.className = 'draft-round';
 
+        const reversed = isSnake && round % 2 === 1;
         const roundTitle = document.createElement('h3');
         roundTitle.className = 'draft-round-title';
-        roundTitle.textContent = `Round ${round + 1}`;
+        roundTitle.textContent = `Round ${round + 1}${reversed ? ' (reversed)' : ''}`;
         roundDiv.appendChild(roundTitle);
 
-        for (let pick = 0; pick < leagueConfig.teamCount; pick++) {
+        for (let slot = 0; slot < leagueConfig.teamCount; slot++) {
+            const pick = reversed ? leagueConfig.teamCount - 1 - slot : slot;
             const originalTeamIndex = lotteryResults[pick].name === teams[pick].name ? pick : teams.findIndex(team => team.name === lotteryResults[pick].name);
             const ownerTeamIndex = pickOwnership[round][originalTeamIndex] !== null ? pickOwnership[round][originalTeamIndex] : originalTeamIndex;
 
@@ -1145,7 +1409,7 @@ function updateFullDraftOrder(lotteryResults) {
 
             const pickNumber = document.createElement('span');
             pickNumber.className = 'draft-pick-number';
-            pickNumber.textContent = `${round * leagueConfig.teamCount + pick + 1}.`;
+            pickNumber.textContent = `${overallPick++}.`;
 
             const pickTeam = document.createElement('span');
             pickTeam.className = 'draft-pick-team';
@@ -1195,12 +1459,14 @@ function updateFullDraftOrder(lotteryResults) {
 
 function downloadFullDraftOrder(lotteryResults) {
     const rows = getFullDraftOrderData(lotteryResults);
-    const lines = [];
+    const isSnake = leagueConfig.draftFormat !== 'linear';
+    const lines = [`Format: ${isSnake ? 'Snake Draft' : 'Linear Draft'}`, ''];
     let round = 1;
     for (let i = 0; i < rows.length; i++) {
         if (i % leagueConfig.teamCount === 0) {
             if (i > 0) lines.push('');
-            lines.push(`Round ${round}`);
+            const reversed = isSnake && (round - 1) % 2 === 1;
+            lines.push(`Round ${round}${reversed ? ' (reversed)' : ''}`);
             round++;
         }
         const r = rows[i];
@@ -1612,8 +1878,12 @@ function runLottery() {
                 lastLotteryResult = {
                     results,
                     magicNumber,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    jumpers: jumpAnalysis.jumpers,
+                    fallers: jumpAnalysis.fallers
                 };
+                saveToHistory(lastLotteryResult);
+                updateProgressTracker();
 
                 const completeMsg = document.createElement('div');
                 completeMsg.className = 'fullscreen-complete';
@@ -1639,9 +1909,20 @@ function runLottery() {
                 viewResultsBtn.className = 'lottery-button';
                 viewResultsBtn.addEventListener('click', closeModal);
                 btnWrap.appendChild(viewResultsBtn);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.type = 'button';
+                copyBtn.textContent = 'Copy Results';
+                copyBtn.className = 'lottery-button';
+                copyBtn.style.background = 'var(--bg-secondary)';
+                copyBtn.style.border = '1px solid var(--border-color)';
+                copyBtn.addEventListener('click', () => copyResults(results));
+                btnWrap.appendChild(copyBtn);
+
                 animationContainer.appendChild(btnWrap);
                 viewResultsBtn.focus();
                 btnWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                launchConfetti();
             }
 
             setTimeout(() => {
@@ -1656,6 +1937,88 @@ function runLottery() {
     } else {
         runFinalLottery(precomputedResults[0]);
     }
+}
+
+// ============================================
+// COPY RESULTS
+// ============================================
+
+function copyResults(results) {
+    const lines = [`${leagueConfig.leagueName} – Lottery Results`, ''];
+    for (let i = 0; i < results.length; i++) {
+        lines.push(`${i + 1}. ${results[i].name}`);
+    }
+    const text = lines.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('Results copied!', 'success')).catch(() => {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Results copied!', 'success'); } catch (e) { showToast('Copy failed — please copy manually.', 'error'); }
+    document.body.removeChild(ta);
+}
+
+// ============================================
+// CONFETTI
+// ============================================
+
+function launchConfetti() {
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ['#3B82F6','#22C55E','#F59E0B','#EF4444','#A855F7','#06B6D4'];
+    const pieces = Array.from({ length: 120 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height,
+        w: 8 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.15,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 3 + Math.random() * 4,
+    }));
+
+    let frame;
+    const duration = 3500;
+    const start = performance.now();
+    function draw(now) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const elapsed = now - start;
+        pieces.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.rotV;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        });
+        if (elapsed < duration) {
+            frame = requestAnimationFrame(draw);
+        } else {
+            canvas.remove();
+        }
+    }
+    frame = requestAnimationFrame(draw);
+    setTimeout(() => { cancelAnimationFrame(frame); canvas.remove(); }, duration + 200);
 }
 
 // ============================================
@@ -1771,6 +2134,129 @@ function formatOrdinal(num) {
 }
 
 // ============================================
+// LOTTERY HISTORY
+// ============================================
+
+function saveToHistory(entry) {
+    try {
+        const raw = localStorage.getItem(LS_KEY_HISTORY);
+        const history = raw ? JSON.parse(raw) : [];
+        history.unshift({
+            timestamp: entry.timestamp,
+            magicNumber: entry.magicNumber,
+            picks: entry.results.map((r, i) => ({ pick: i + 1, name: r.name })),
+            jumpers: (entry.jumpers || []).map(j => ({ name: j.team.name, pick: j.pick, fromSeed: j.fromSeed })),
+        });
+        // Keep last 20 runs
+        if (history.length > 20) history.splice(20);
+        safeSetItem(LS_KEY_HISTORY, JSON.stringify(history));
+    } catch (e) {
+        console.warn('Failed to save lottery history', e);
+    }
+    renderHistory();
+}
+
+function renderHistory() {
+    const section = document.getElementById('historySection');
+    if (!section) return;
+
+    let history = [];
+    try {
+        const raw = localStorage.getItem(LS_KEY_HISTORY);
+        if (raw) history = JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+
+    if (!history.length) { section.style.display = 'none'; return; }
+
+    section.style.display = '';
+    section.innerHTML = '';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Lottery History';
+    section.appendChild(h2);
+
+    history.forEach((run, idx) => {
+        const entry = document.createElement('details');
+        entry.className = 'history-entry';
+        if (idx === 0) entry.open = true;
+
+        const summary = document.createElement('summary');
+        const date = new Date(run.timestamp).toLocaleString();
+        summary.textContent = `Run #${history.length - idx} — ${date} (magic #${run.magicNumber})`;
+        entry.appendChild(summary);
+
+        const pickList = document.createElement('ol');
+        pickList.className = 'history-picks';
+        run.picks.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = p.name;
+            pickList.appendChild(li);
+        });
+        entry.appendChild(pickList);
+
+        if (run.jumpers && run.jumpers.length) {
+            const chaos = document.createElement('p');
+            chaos.className = 'history-chaos';
+            chaos.textContent = 'Jumpers: ' + run.jumpers.map(j => `${j.name} (seed ${j.fromSeed} → pick ${j.pick})`).join(', ');
+            entry.appendChild(chaos);
+        }
+
+        section.appendChild(entry);
+    });
+}
+
+// ============================================
+// CONFIG EXPORT / IMPORT
+// ============================================
+
+function exportConfig() {
+    if (!leagueConfig) { showToast('No config to export.'); return; }
+    const payload = JSON.stringify(leagueConfig, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${sanitizeFilename(leagueConfig.leagueName)}-config.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function importConfig() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (!parsed || typeof parsed.teamCount !== 'number') {
+                    showToast('Invalid config file.', 'error');
+                    return;
+                }
+                if (!Array.isArray(parsed.combinations) || parsed.combinations.reduce((a, b) => a + b, 0) !== 1000) {
+                    showToast('Config combinations must sum to 1,000.', 'error');
+                    return;
+                }
+                // Clear existing state
+                localStorage.removeItem(LS_KEY_TEAM_NAMES);
+                localStorage.removeItem(LS_KEY_TEAMS_LOCKED);
+                localStorage.removeItem(LS_KEY_PICK_OWNERSHIP_LOCKED);
+                localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+                saveLeagueConfig(parsed);
+                showToast('Config imported successfully.', 'success');
+                initApp();
+            } catch (err) {
+                showToast('Failed to parse config file.', 'error');
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.click();
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -1795,9 +2281,48 @@ function initApp() {
     loadSavedPickOwnership();
     createPickOwnershipTable();
     applyLotteryButtonState();
+    updateProgressTracker();
+    updateSectionBadges();
 
     const draftOrderSection = document.querySelector('.draft-order-section');
     if (draftOrderSection) draftOrderSection.style.display = 'none';
+
+    renderHistory();
+
+    // Config export / import
+    const exportBtn = document.getElementById('exportConfigBtn');
+    if (exportBtn) { exportBtn.replaceWith(exportBtn.cloneNode(true)); }
+    const freshExport = document.getElementById('exportConfigBtn');
+    if (freshExport) freshExport.addEventListener('click', exportConfig);
+
+    const importBtn = document.getElementById('importConfigBtn');
+    if (importBtn) { importBtn.replaceWith(importBtn.cloneNode(true)); }
+    const freshImport = document.getElementById('importConfigBtn');
+    if (freshImport) freshImport.addEventListener('click', importConfig);
+
+    // Reset button — double-tap guard
+    const resetBtn = document.getElementById('resetButton');
+    if (resetBtn) {
+        const freshReset = resetBtn.cloneNode(true);
+        resetBtn.replaceWith(freshReset);
+        let resetPending = false;
+        freshReset.addEventListener('click', () => {
+            if (!resetPending) {
+                resetPending = true;
+                freshReset.textContent = 'Tap again to confirm reset';
+                freshReset.style.background = 'var(--danger)';
+                setTimeout(() => {
+                    resetPending = false;
+                    freshReset.textContent = 'Reset All Data';
+                    freshReset.style.background = '';
+                }, 3000);
+            } else {
+                [LS_KEY_LEAGUE_CONFIG, LS_KEY_TEAM_NAMES, LS_KEY_TEAMS_LOCKED,
+                 LS_KEY_PICK_OWNERSHIP_LOCKED, LS_KEY_PICK_OWNERSHIP, LS_KEY_HISTORY].forEach(k => localStorage.removeItem(k));
+                location.reload();
+            }
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

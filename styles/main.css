@@ -1686,6 +1686,25 @@ h2::before {
     color: var(--danger);
 }
 
+.wizard-auto-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: border-color var(--transition-base), color var(--transition-base);
+}
+
+.wizard-auto-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
 .wizard-nav {
     display: flex;
     justify-content: space-between;
@@ -1733,6 +1752,32 @@ h2::before {
     margin-top: var(--space-xs);
 }
 
+.wizard-format-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.wizard-format-card {
+    display: block;
+    padding: var(--space-md);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color var(--transition-base), background var(--transition-base);
+    background: var(--bg-secondary);
+}
+
+.wizard-format-card:hover {
+    border-color: var(--primary);
+}
+
+.wizard-format-card.selected {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
 .reconfigure-button {
     background: transparent;
     border: 1px solid var(--border-color);
@@ -1772,4 +1817,192 @@ h2::before {
     border-radius: 8px;
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+/* ============================================
+   PROGRESS TRACKER
+   ============================================ */
+
+.progress-tracker {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: var(--space-md) 0 var(--space-xl);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.progress-step.done {
+    color: var(--success);
+}
+
+.progress-step.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.progress-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--bg-primary);
+    border: 2px solid currentColor;
+    flex-shrink: 0;
+}
+
+.progress-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border-color);
+    min-width: 24px;
+}
+
+.progress-line.done {
+    background: var(--success);
+}
+
+/* ============================================
+   SECTION BADGES
+   ============================================ */
+
+.section-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-left: var(--space-sm);
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+}
+
+.badge-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-pending {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-locked {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+/* ============================================
+   LOTTERY HISTORY
+   ============================================ */
+
+.history-section {
+    margin-top: var(--space-xl);
+}
+
+.history-entry {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: var(--space-sm);
+    overflow: hidden;
+}
+
+.history-entry summary {
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.history-entry summary::-webkit-details-marker { display: none; }
+
+.history-entry summary::before {
+    content: '▶';
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.history-entry[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.history-picks {
+    margin: 0;
+    padding: var(--space-sm) var(--space-md) var(--space-md) calc(var(--space-md) + 1.5rem);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+.history-chaos {
+    margin: 0 var(--space-md) var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 3px solid #F59E0B;
+    color: #F59E0B;
+    font-size: 0.8rem;
+    border-radius: 0 6px 6px 0;
+}
+
+/* ============================================
+   MAGIC NUMBER HELP + MOBILE UX
+   ============================================ */
+
+.magic-number-help {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: var(--space-xs);
+}
+
+.lottery-button {
+    min-height: 48px;
+}
+
+@media (max-width: 600px) {
+    .odds-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .odds-table-container::after {
+        content: '← scroll →';
+        display: block;
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: var(--space-xs) 0;
+    }
+
+    .progress-tracker {
+        flex-wrap: wrap;
+        gap: var(--space-xs);
+    }
+
+    .progress-line {
+        display: none;
+    }
 }
