@@ -18,8 +18,14 @@
         <div class="league-header">
             <h1 id="leagueTitle">Fantasy Draft Lottery</h1>
             <p class="subtitle" id="leagueSubtitle">Configure your league to get started</p>
-            <button type="button" id="reconfigureBtn" class="reconfigure-button" title="Reconfigure League">&#9881; Reconfigure</button>
+            <div class="header-config-actions">
+                <button type="button" id="exportConfigBtn" class="config-action-btn" title="Export league config">&#8595; Export Config</button>
+                <button type="button" id="importConfigBtn" class="config-action-btn" title="Import league config">&#8593; Import Config</button>
+            </div>
+            <button type="button" id="reconfigureBtn" class="reconfigure-button" title="Reconfigure League" aria-label="Reconfigure league settings">&#9881; Reconfigure</button>
         </div>
+
+        <div id="progressTracker" class="progress-tracker"></div>
 
         <section class="team-inputs-section">
             <h2>Enter Team Names</h2>
@@ -54,8 +60,9 @@
         <section class="lottery-section">
             <div class="lottery-controls">
                 <div class="magic-number-input">
-                    <label for="magicNumber">Magic number (1–99; the Nth run is the official result):</label>
+                    <label for="magicNumber">Magic number (1–99):</label>
                     <input type="number" id="magicNumber" min="1" max="99" value="1" required>
+                    <p class="magic-number-help">Pick 1–99. Your official result is the Nth simulation.</p>
                 </div>
                 <button class="lottery-button" id="lotteryButton">
                     <span class="button-text">Run Lottery</span>
@@ -76,6 +83,8 @@
             </div>
         </section>
 
+        <section id="historySection" class="history-section" style="display:none;"></section>
+
         <div class="reset-container">
             <button type="button" class="reset-button" id="resetButton">Reset All Data</button>
         </div>
@@ -86,14 +95,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const button = document.getElementById('lotteryButton');
             if (button) button.addEventListener('click', runLottery);
-
-            const resetBtn = document.getElementById('resetButton');
-            if (resetBtn) resetBtn.addEventListener('click', function() {
-                if (confirm('This will clear all saved data and league configuration. Continue?')) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            });
 
             const reconfigBtn = document.getElementById('reconfigureBtn');
             if (reconfigBtn) reconfigBtn.addEventListener('click', function() {
