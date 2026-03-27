@@ -375,17 +375,21 @@ function computeOdds(combinations, drawnPicks) {
 // SETUP WIZARD
 // ============================================
 
+function arraysEqual(a, b) {
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 function showSetupWizard(existingConfig) {
     const overlay = document.getElementById('setupWizard');
     if (!overlay) return;
 
     const config = existingConfig || {
-        leagueName: '',
+        leagueName: 'My Fantasy League',
         teamCount: 10,
-        teamNames: [],
+        teamNames: Array.from({ length: 10 }, (_, i) => `Team ${i + 1}`),
         drawnPicks: 4,
         byRecordPicks: 2,
-        combinations: [],
+        combinations: generateWeights(6),
         rounds: 3,
         draftFormat: 'snake',
         floorPicks: 0
@@ -445,7 +449,24 @@ function showSetupWizard(existingConfig) {
             backBtn.addEventListener('click', () => { currentStep--; render(); });
             nav.appendChild(backBtn);
         } else {
-            nav.appendChild(document.createElement('div')); // spacer
+            const backToQsBtn = document.createElement('button');
+            backToQsBtn.type = 'button';
+            backToQsBtn.className = 'wizard-btn-back';
+            backToQsBtn.textContent = '← Quick Start';
+            backToQsBtn.addEventListener('click', () => {
+                const isDefaultConfig = config.leagueName === 'My Fantasy League' &&
+                    config.teamNames.every((n, i) => n === `Team ${i + 1}`) &&
+                    (config.combinations.length === 0 || arraysEqual(config.combinations, generateWeights(config.drawnPicks + config.byRecordPicks)));
+                if (!isDefaultConfig) {
+                    const msg = existingConfig
+                        ? 'Going back to Quick Start will discard your current league setup. Continue?'
+                        : 'Going back will discard your wizard progress. Continue?';
+                    showConfirm(msg, () => showQuickStart());
+                } else {
+                    showQuickStart();
+                }
+            });
+            nav.appendChild(backToQsBtn);
         }
 
         const nextBtn = document.createElement('button');
@@ -899,6 +920,83 @@ function showToast(message, type = 'error') {
 }
 
 // ============================================
+// CONFIRM MODAL
+// ============================================
+
+function showConfirm(message, onConfirm, onCancel) {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Confirm action');
+
+    const card = document.createElement('div');
+    card.className = 'confirm-card';
+
+    const title = document.createElement('h3');
+    title.className = 'confirm-title';
+    title.textContent = 'Are you sure?';
+
+    const msg = document.createElement('p');
+    msg.className = 'confirm-message';
+    msg.textContent = message;
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'confirm-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'confirm-btn-confirm';
+    confirmBtn.textContent = 'Yes, continue';
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    card.appendChild(title);
+    card.appendChild(msg);
+    card.appendChild(actions);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const removeTrap = trapFocus(overlay);
+
+    function dismiss() {
+        removeTrap();
+        document.removeEventListener('keydown', onKeydown);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
+    function onKeydown(e) {
+        if (e.key === 'Escape') {
+            dismiss();
+            onCancel?.();
+        }
+    }
+    document.addEventListener('keydown', onKeydown);
+
+    cancelBtn.addEventListener('click', () => {
+        dismiss();
+        onCancel?.();
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        dismiss();
+        onConfirm();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            dismiss();
+            onCancel?.();
+        }
+    });
+
+    cancelBtn.focus();
+}
+
+// ============================================
 // LOCAL STORAGE
 // ============================================
 
@@ -1072,7 +1170,18 @@ function applyTeamLockState() {
 
 function handleConfirmTeamOrder() {
     if (teamsLocked) {
-        unlockTeams();
+        const hasPickData = pickOwnershipLocked || pickOwnership.some(round => round.some(v => v !== null));
+        if (hasPickData) {
+            showConfirm(
+                'Editing team names will clear your pick ownership and any lottery results. Continue?',
+                () => {
+                    clearResultsDOM();
+                    unlockTeams();
+                }
+            );
+        } else {
+            unlockTeams();
+        }
         return;
     }
     if (!validateTeamSelections()) return;
@@ -1220,6 +1329,20 @@ function lockPickOwnership() {
 }
 
 function unlockPickOwnership() {
+    if (lastLotteryResult) {
+        showConfirm(
+            'Editing pick ownership will clear your lottery results. Continue?',
+            () => {
+                clearResultsDOM();
+                _doUnlockPickOwnership();
+            }
+        );
+    } else {
+        _doUnlockPickOwnership();
+    }
+}
+
+function _doUnlockPickOwnership() {
     pickOwnershipLocked = false;
     savePickOwnershipLockState();
     createPickOwnershipTable();
@@ -1398,6 +1521,25 @@ function createPickOwnershipTable() {
     }
 
     table.appendChild(tbody);
+
+    if (!pickOwnershipLocked) {
+        const autoFillBtn = document.createElement('button');
+        autoFillBtn.type = 'button';
+        autoFillBtn.className = 'own-picks-btn';
+        autoFillBtn.textContent = '⚡ Auto-Fill: Each Team Owns Their Own Pick';
+        autoFillBtn.title = 'Each team owns their own pick slot in every round';
+        autoFillBtn.addEventListener('click', () => {
+            for (let r = 0; r < leagueConfig.rounds; r++) {
+                for (let p = 0; p < leagueConfig.teamCount; p++) {
+                    pickOwnership[r][p] = p;
+                }
+            }
+            savePickOwnership();
+            createPickOwnershipTable();
+        });
+        tableContainer.appendChild(autoFillBtn);
+    }
+
     tableContainer.appendChild(table);
 
     // Confirm / Edit Pick Ownership button
@@ -1405,24 +1547,6 @@ function createPickOwnershipTable() {
     if (actionsContainer) {
         actionsContainer.style.display = '';
         actionsContainer.innerHTML = '';
-
-        if (!pickOwnershipLocked) {
-            const ownPicksBtn = document.createElement('button');
-            ownPicksBtn.type = 'button';
-            ownPicksBtn.className = 'pick-ownership-preset-btn';
-            ownPicksBtn.textContent = 'Assign Own Picks';
-            ownPicksBtn.title = 'Each team owns their own pick in every round';
-            ownPicksBtn.addEventListener('click', () => {
-                for (let r = 0; r < leagueConfig.rounds; r++) {
-                    for (let p = 0; p < leagueConfig.teamCount; p++) {
-                        pickOwnership[r][p] = p;
-                    }
-                }
-                savePickOwnership();
-                createPickOwnershipTable();
-            });
-            actionsContainer.appendChild(ownPicksBtn);
-        }
 
         confirmPickOwnershipButton = document.createElement('button');
         confirmPickOwnershipButton.type = 'button';
@@ -2218,6 +2342,16 @@ function launchConfetti() {
 // ============================================
 // RESULTS DIV (below modal)
 // ============================================
+
+function clearResultsDOM() {
+    const resultsDiv = document.getElementById('results');
+    if (resultsDiv) { resultsDiv.innerHTML = ''; resultsDiv.style.display = 'none'; }
+    const fullDraftOrder = document.getElementById('fullDraftOrder');
+    if (fullDraftOrder) fullDraftOrder.innerHTML = '';
+    const draftOrderSection = document.querySelector('.draft-order-section');
+    if (draftOrderSection) draftOrderSection.style.display = 'none';
+    lastLotteryResult = null;
+}
 
 function updateResultsDiv(results) {
     const resultsDiv = document.getElementById('results');

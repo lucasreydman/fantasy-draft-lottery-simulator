@@ -1399,6 +1399,84 @@ h2::before {
     color: #86EFAC;
 }
 
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20001;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+}
+
+.confirm-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+}
+
+.confirm-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: var(--space-sm);
+}
+
+.confirm-message {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin-bottom: var(--space-xl);
+}
+
+.confirm-actions {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: flex-end;
+}
+
+.confirm-btn-cancel {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.confirm-btn-cancel:hover {
+    border-color: var(--color-primary);
+    background: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.confirm-btn-confirm {
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+
+.confirm-btn-confirm:hover {
+    filter: brightness(1.1);
+}
+
 /* ============================================
    COMPLETE MESSAGE (non-fullscreen results)
    ============================================ */
@@ -2318,6 +2396,34 @@ h2::before {
     color: var(--color-success);
     background: rgba(34, 197, 94, 0.08);
 }
+
+.own-picks-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem var(--space-md);
+    margin-bottom: var(--space-md);
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: var(--radius-md);
+    color: var(--color-success);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.own-picks-btn:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: var(--color-success);
+    transform: translateY(-1px);
+}
+
+.own-picks-btn:active {
+    transform: translateY(0);
+}
+
 .lottery-button {
     min-height: 48px;
 }

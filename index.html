@@ -106,11 +106,30 @@
             const reconfigBtn = document.getElementById('reconfigureBtn');
             if (reconfigBtn) reconfigBtn.addEventListener('click', function() {
                 const currentConfig = loadLeagueConfig();
-                showSetupWizard(currentConfig);
+                if (typeof teamsLocked !== 'undefined' && teamsLocked) {
+                    showConfirm(
+                        'Going back to setup will let you change your league structure. Your current team names are preserved but structural changes may reset picks.',
+                        () => showSetupWizard(currentConfig)
+                    );
+                } else {
+                    showSetupWizard(currentConfig);
+                }
             });
 
             const backToPresetsBtn = document.getElementById('backToPresetsBtn');
-            if (backToPresetsBtn) backToPresetsBtn.addEventListener('click', showQuickStart);
+            if (backToPresetsBtn) backToPresetsBtn.addEventListener('click', function() {
+                const hasData = (typeof teamsLocked !== 'undefined' && teamsLocked) ||
+                                (typeof pickOwnershipLocked !== 'undefined' && pickOwnershipLocked) ||
+                                (typeof lastLotteryResult !== 'undefined' && lastLotteryResult);
+                if (hasData) {
+                    showConfirm(
+                        'Going back to Quick Start will reset all your league data. Are you sure?',
+                        showQuickStart
+                    );
+                } else {
+                    showQuickStart();
+                }
+            });
         });
     </script>
 </body>
