@@ -19,6 +19,7 @@
             <h1 id="leagueTitle">Fantasy Draft Lottery</h1>
             <p class="subtitle" id="leagueSubtitle">Configure your league to get started</p>
             <div class="header-config-actions">
+                <button type="button" id="backToPresetsBtn" class="back-to-presets-btn" title="Back to sport presets">&#8592; Change Sport</button>
                 <button type="button" id="exportConfigBtn" class="config-action-btn" title="Export league config">&#8595; Export Config</button>
                 <button type="button" id="importConfigBtn" class="config-action-btn" title="Import league config">&#8593; Import Config</button>
             </div>
@@ -60,9 +61,11 @@
         <section class="lottery-section">
             <div class="lottery-controls">
                 <div class="magic-number-input">
-                    <label for="magicNumber">Magic number (1–99):</label>
+                    <div class="magic-number-label-group">
+                        <label for="magicNumber">Magic number (1–99)</label>
+                        <p class="magic-number-help">A secret number only you know. Run the lottery and your official result is that simulation number — adds fairness &amp; fun.</p>
+                    </div>
                     <input type="number" id="magicNumber" min="1" max="99" value="1" required>
-                    <p class="magic-number-help">Pick 1–99. Your official result is the Nth simulation.</p>
                 </div>
                 <button class="lottery-button" id="lotteryButton">
                     <span class="button-text">Run Lottery</span>
@@ -101,6 +104,9 @@
                 const currentConfig = loadLeagueConfig();
                 showSetupWizard(currentConfig);
             });
+
+            const backToPresetsBtn = document.getElementById('backToPresetsBtn');
+            if (backToPresetsBtn) backToPresetsBtn.addEventListener('click', showQuickStart);
         });
     </script>
 </body>

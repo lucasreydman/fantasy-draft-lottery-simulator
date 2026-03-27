@@ -93,6 +93,35 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global input base — dark theme for all text/number inputs */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"] {
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: inherit;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+    color: var(--color-text-dim);
+}
+
+/* Hide browser number spinners globally */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
 /* ============================================
    LAYOUT
    ============================================ */
@@ -145,6 +174,54 @@ body {
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+}
+
+.header-config-actions {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: var(--space-md);
+}
+
+.config-action-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.config-action-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.back-to-presets-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.back-to-presets-btn:hover {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+    background: rgba(148, 163, 184, 0.08);
 }
 
 /* ============================================
@@ -228,6 +305,35 @@ h2::before {
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+.team-name-input {
+    padding: 0.65rem var(--space-md);
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.team-name-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+}
+
+.team-name-input::placeholder {
+    color: var(--color-text-dim);
+}
+
+.team-name-input:disabled {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-dim);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .team-input-row select {
@@ -575,14 +681,27 @@ h2::before {
 .magic-number-input {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-lg);
+}
+
+.magic-number-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .magic-number-input label {
-    font-weight: 500;
-    color: var(--color-text-muted);
+    font-weight: 600;
+    color: var(--color-text);
     white-space: nowrap;
     font-size: 0.95rem;
+}
+
+.magic-number-help {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    max-width: 240px;
+    line-height: 1.4;
 }
 
 .magic-number-input input {
@@ -597,6 +716,7 @@ h2::before {
     background-color: var(--color-bg-input);
     color: var(--color-text);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    -moz-appearance: textfield;
 }
 
 .magic-number-input input:focus {
@@ -607,7 +727,9 @@ h2::before {
 
 .magic-number-input input::-webkit-inner-spin-button,
 .magic-number-input input::-webkit-outer-spin-button {
-    opacity: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
 }
 
 /* ============================================
@@ -2111,15 +2233,6 @@ h2::before {
     border-radius: 0 6px 6px 0;
 }
 
-/* ============================================
-   MAGIC NUMBER HELP + MOBILE UX
-   ============================================ */
-
-.magic-number-help {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-top: var(--space-xs);
-}
 
 .lottery-button {
     min-height: 48px;
