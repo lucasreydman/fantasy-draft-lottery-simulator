@@ -57,6 +57,182 @@ function generateWeights(n) {
 }
 
 // ============================================
+// LEAGUE PRESETS
+// ============================================
+
+const LEAGUE_PRESETS = [
+    {
+        id: 'fantasy_football',
+        icon: '🏈',
+        sport: 'Fantasy Football',
+        tagline: '12 teams · 15 rounds · Snake draft',
+        config: {
+            leagueName: 'Fantasy Football League',
+            teamCount: 12,
+            teamNames: [
+                'Hail Marys', 'Fumble Bros', 'Gridiron Gods', 'Blitz Brigade',
+                'End Zone Elites', 'Pocket Rockets', 'First & Ten', 'Pigskin Posse',
+                'Touchdown Tyrants', 'Fantasy Phenoms', 'The Destroyers', 'Smash FC',
+            ],
+            drawnPicks: 4,
+            byRecordPicks: 8,
+            combinations: generateWeights(12),
+            rounds: 15,
+            draftFormat: 'snake',
+            floorPicks: 2,
+        }
+    },
+    {
+        id: 'fantasy_basketball',
+        icon: '🏀',
+        sport: 'Fantasy Basketball',
+        tagline: '10 teams · 13 rounds · Snake draft',
+        config: {
+            leagueName: 'Fantasy Basketball League',
+            teamCount: 10,
+            teamNames: [
+                'Hoop Dreams', 'Rim Wreckers', 'Splash Zone', 'Dunk Dynasty',
+                'Full Court Press', 'Paint Monsters', 'Fast Break Kings',
+                '3-Point Assassins', 'The Buckets', 'Bball Ballers',
+            ],
+            drawnPicks: 3,
+            byRecordPicks: 7,
+            combinations: generateWeights(10),
+            rounds: 13,
+            draftFormat: 'snake',
+            floorPicks: 0,
+        }
+    },
+    {
+        id: 'fantasy_hockey',
+        icon: '🏒',
+        sport: 'Fantasy Hockey',
+        tagline: '10 teams · 20 rounds · Snake draft',
+        config: {
+            leagueName: 'Fantasy Hockey League',
+            teamCount: 10,
+            teamNames: [
+                'Ice Cold', 'Puck Wizards', 'Hat Trick Heroes', 'Chirp Kings',
+                'Power Plays', 'Tendy Gang', 'The Snipes', 'Penalty Box',
+                'Blue Liners', 'Biscuit Boys',
+            ],
+            drawnPicks: 3,
+            byRecordPicks: 7,
+            combinations: generateWeights(10),
+            rounds: 20,
+            draftFormat: 'snake',
+            floorPicks: 0,
+        }
+    },
+    {
+        id: 'fantasy_baseball',
+        icon: '⚾',
+        sport: 'Fantasy Baseball',
+        tagline: '12 teams · 23 rounds · Snake draft',
+        config: {
+            leagueName: 'Fantasy Baseball League',
+            teamCount: 12,
+            teamNames: [
+                'Diamond Dogs', 'Bat Boys', 'Home Run Heroes', 'Curveball Kings',
+                'Clutch Hitters', 'Grand Slammers', 'Bullpen Bombers', 'Extra Innings',
+                'Ace Pitchers', 'Southpaw City', 'Walks & Balks', 'The Mudcats',
+            ],
+            drawnPicks: 4,
+            byRecordPicks: 8,
+            combinations: generateWeights(12),
+            rounds: 23,
+            draftFormat: 'snake',
+            floorPicks: 0,
+        }
+    },
+];
+
+function showQuickStart() {
+    const overlay = document.getElementById('setupWizard');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    document.querySelector('.container').style.display = 'none';
+    overlay.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'wizard-card quickstart-card';
+
+    const badge = document.createElement('div');
+    badge.className = 'quickstart-badge';
+    badge.textContent = 'Quick Start';
+    card.appendChild(badge);
+
+    const title = document.createElement('h1');
+    title.className = 'quickstart-title';
+    title.textContent = 'Try the Lottery Simulator';
+    card.appendChild(title);
+
+    const sub = document.createElement('p');
+    sub.className = 'quickstart-sub';
+    sub.textContent = 'Pick a fantasy sport to instantly load a demo league and run the lottery — no setup required.';
+    card.appendChild(sub);
+
+    const grid = document.createElement('div');
+    grid.className = 'quickstart-grid';
+
+    LEAGUE_PRESETS.forEach(preset => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quickstart-preset-btn';
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'quickstart-icon';
+        iconEl.textContent = preset.icon;
+
+        const sportEl = document.createElement('strong');
+        sportEl.textContent = preset.sport;
+
+        const tagEl = document.createElement('span');
+        tagEl.className = 'quickstart-tag';
+        tagEl.textContent = preset.tagline;
+
+        btn.appendChild(iconEl);
+        btn.appendChild(sportEl);
+        btn.appendChild(tagEl);
+
+        btn.addEventListener('click', () => {
+            const cfg = { ...preset.config };
+            cfg.lockedPicks = cfg.teamCount - cfg.drawnPicks - cfg.byRecordPicks;
+            cfg.odds = computeOdds(cfg.combinations, cfg.drawnPicks);
+            safeSetItem(LS_KEY_LEAGUE_CONFIG, JSON.stringify(cfg));
+            leagueConfig = cfg;
+            // Clear any stale state
+            localStorage.removeItem(LS_KEY_TEAM_NAMES);
+            localStorage.removeItem(LS_KEY_TEAMS_LOCKED);
+            localStorage.removeItem(LS_KEY_PICK_OWNERSHIP_LOCKED);
+            localStorage.removeItem(LS_KEY_PICK_OWNERSHIP);
+            overlay.style.display = 'none';
+            document.querySelector('.container').style.display = '';
+            initApp();
+            showToast(`${preset.sport} demo loaded! Confirm teams to continue.`, 'success');
+        });
+
+        grid.appendChild(btn);
+    });
+
+    card.appendChild(grid);
+
+    const divider = document.createElement('div');
+    divider.className = 'quickstart-divider';
+    divider.innerHTML = '<span>or</span>';
+    card.appendChild(divider);
+
+    const customBtn = document.createElement('button');
+    customBtn.type = 'button';
+    customBtn.className = 'quickstart-custom-btn';
+    customBtn.textContent = 'Set Up My Own League →';
+    customBtn.addEventListener('click', () => showSetupWizard(null));
+    card.appendChild(customBtn);
+
+    overlay.appendChild(card);
+}
+
+// ============================================
 // LEAGUE CONFIG
 // ============================================
 
@@ -2329,7 +2505,7 @@ document.addEventListener('DOMContentLoaded', function() {
     leagueConfig = loadLeagueConfig();
 
     if (!leagueConfig) {
-        showSetupWizard(null);
+        showQuickStart();
     } else {
         const wizard = document.getElementById('setupWizard');
         if (wizard) wizard.style.display = 'none';
