@@ -161,7 +161,7 @@ input[type="number"] {
 
 .league-header h1 {
     color: var(--color-text);
-    font-size: 3rem;
+    font-size: clamp(1.4rem, 3vw + 0.5rem, 3rem);
     font-weight: 800;
     letter-spacing: -0.02em;
     margin-bottom: var(--space-sm);
@@ -258,6 +258,9 @@ h2 {
     align-items: center;
     flex-wrap: wrap;
     gap: var(--space-sm);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
 }
 
 h2::before {
@@ -386,7 +389,8 @@ h2::before {
     align-items: center;
     gap: var(--space-sm);
     margin: var(--space-md) auto 0;
-    max-width: 320px;
+    max-width: 400px;
+    width: 100%;
 }
 
 .team-confirm-button {
@@ -452,7 +456,7 @@ h2::before {
 .odds-table,
 .pick-ownership-table {
     width: 100%;
-    min-width: 360px; /* prevent collapse below readable width */
+    min-width: 400px; /* prevent collapse below readable width */
     border-collapse: separate;
     border-spacing: 0;
     border-radius: var(--radius-lg);
@@ -471,6 +475,8 @@ h2::before {
     font-size: 0.8rem;
     letter-spacing: 0.06em;
     border: none;
+    white-space: nowrap;
+    min-width: 60px;
 }
 
 .odds-table td,
@@ -480,6 +486,7 @@ h2::before {
     border-bottom: 1px solid var(--color-border);
     font-size: 0.95rem;
     color: var(--color-text);
+    white-space: nowrap;
 }
 
 .odds-table tr:last-child td,
@@ -502,13 +509,22 @@ h2::before {
     background-color: rgba(59, 130, 246, 0.08);
 }
 
+.odds-table td:first-child,
+.odds-table th:first-child {
+    text-align: left;
+}
+
 .odds-table td:first-child {
     font-weight: 600;
     color: var(--color-primary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pick-ownership-table select {
     width: 100%;
+    min-width: 130px;
     padding: 0.45rem 0.5rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -523,6 +539,13 @@ h2::before {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-glow);
+}
+
+.original-team-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
 }
 
 .round-header {
@@ -598,7 +621,8 @@ h2::before {
 }
 
 .draft-pick-number {
-    flex: 0 0 2.2rem;
+    flex: 0 0 3rem;
+    min-width: 3rem;
     font-weight: 700;
     color: var(--color-accent);
     font-family: 'JetBrains Mono', monospace;
@@ -634,6 +658,7 @@ h2::before {
     margin-top: var(--space-lg);
     justify-content: center;
     grid-column: 1 / -1;
+    width: 100%;
 }
 
 /* ============================================
@@ -1631,13 +1656,20 @@ h2::before {
         grid-template-columns: 1fr;
     }
 
-    .league-header h1 {
-        font-size: 2rem;
-    }
-
     .lottery-controls {
         flex-direction: column;
         gap: var(--space-md);
+        text-align: center;
+    }
+
+    .magic-number-input {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .magic-number-label-group {
+        text-align: center;
+        flex: 1 0 100%;
     }
 
     .lottery-title {
@@ -1689,10 +1721,6 @@ h2::before {
         padding: var(--space-lg) var(--space-md);
     }
 
-    .league-header h1 {
-        font-size: 1.4rem;
-    }
-
     section {
         padding: var(--space-md);
     }
@@ -1740,6 +1768,24 @@ h2::before {
 
     .pick-timer-label {
         font-size: 0.75rem;
+    }
+
+    .wizard-structure-row {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+    }
+
+    .wizard-structure-row label {
+        flex: 1 0 100%;
+    }
+
+    .wizard-structure-row input {
+        width: 100%;
+    }
+
+    .lottery-button {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -2185,7 +2231,8 @@ h2::before {
 }
 
 .wizard-structure-row label {
-    min-width: 200px;
+    min-width: 0;
+    flex: 1;
     margin-bottom: 0;
 }
 
@@ -2224,6 +2271,7 @@ h2::before {
     color: var(--text-secondary);
     font-size: 0.85rem;
     flex-shrink: 0;
+    min-width: 0;
 }
 
 .progress-step.done {
@@ -2233,6 +2281,13 @@ h2::before {
 .progress-step.active {
     color: var(--primary);
     font-weight: 600;
+}
+
+.progress-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .progress-dot {
@@ -2429,18 +2484,32 @@ h2::before {
 }
 
 @media (max-width: 600px) {
-    .odds-table-container {
+    .odds-table-container,
+    .pick-ownership-container {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
 
-    .odds-table-container::after {
+    .odds-table-container::after,
+    .pick-ownership-container::after {
         content: '← scroll →';
         display: block;
         text-align: center;
         font-size: 0.75rem;
         color: var(--text-secondary);
         padding: var(--space-xs) 0;
+    }
+
+    .odds-table th,
+    .pick-ownership-table th {
+        padding: 0.55rem 0.65rem;
+        font-size: 0.72rem;
+    }
+
+    .odds-table td,
+    .pick-ownership-table td {
+        padding: 0.55rem 0.65rem;
+        font-size: 0.85rem;
     }
 
     .progress-tracker {
@@ -2450,6 +2519,35 @@ h2::before {
 
     .progress-line {
         display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    .podium-block {
+        width: 72px;
+    }
+
+    .podium-team-name {
+        max-width: 60px;
+        font-size: 0.72rem;
+    }
+
+    .quick-iteration-podium {
+        gap: 3px;
+    }
+
+    .league-header {
+        padding: var(--space-md) var(--space-sm);
+    }
+
+    .header-config-actions {
+        gap: var(--space-xs);
+    }
+
+    .config-action-btn,
+    .back-to-presets-btn {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.75rem;
     }
 }
 
