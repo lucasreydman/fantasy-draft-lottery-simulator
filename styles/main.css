@@ -119,6 +119,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 input[type="number"] {
+    appearance: textfield;
     -moz-appearance: textfield;
 }
 
@@ -751,6 +752,7 @@ h2::before {
     background-color: var(--color-bg-input);
     color: var(--color-text);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    appearance: textfield;
     -moz-appearance: textfield;
 }
 

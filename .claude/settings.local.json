@@ -8,7 +8,9 @@
       "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/images/favicon.png /c/Users/lucas/dev/fantasy-draft-lottery-simulator/images/)",
       "Bash(cp /c/Users/lucas/dev/fantasy-draft-lottery/.github/workflows/static.yml /c/Users/lucas/dev/fantasy-draft-lottery-simulator/.github/workflows/)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git:*)",
+      "Skill(update-config)"
     ]
   }
 }
