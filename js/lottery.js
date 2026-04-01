@@ -1701,10 +1701,10 @@ function updateFullDraftOrder(lotteryResults) {
     fullDraftOrderDiv.innerHTML = '';
 
     const isSnake = leagueConfig.draftFormat !== 'linear';
-    const formatLabel = document.createElement('p');
-    formatLabel.className = 'section-description';
-    formatLabel.textContent = isSnake ? 'Format: Snake Draft' : 'Format: Linear Draft';
-    fullDraftOrderDiv.appendChild(formatLabel);
+    const draftOrderDesc = document.getElementById('draftOrderDesc');
+    if (draftOrderDesc) {
+        draftOrderDesc.textContent = isSnake ? 'Format: Snake Draft' : 'Format: Linear Draft';
+    }
 
     let overallPick = 1;
     for (let round = 0; round < leagueConfig.rounds; round++) {
