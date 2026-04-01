@@ -2455,11 +2455,10 @@ h2::before {
 }
 
 .own-picks-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
+    display: block;
+    width: fit-content;
+    margin: 0 auto var(--space-md);
     padding: 0.4rem 1rem;
-    margin-bottom: var(--space-md);
     background: rgba(34, 197, 94, 0.08);
     border: 1px solid rgba(34, 197, 94, 0.35);
     border-radius: var(--radius-pill);
@@ -2469,17 +2468,16 @@ h2::before {
     font-family: inherit;
     cursor: pointer;
     text-align: center;
-    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .own-picks-btn:hover {
-    background: rgba(34, 197, 94, 0.15);
+    background: rgba(34, 197, 94, 0.18);
     border-color: var(--color-success);
-    transform: translateY(-1px);
 }
 
 .own-picks-btn:active {
-    transform: translateY(0);
+    background: rgba(34, 197, 94, 0.25);
 }
 
 .lottery-button {
