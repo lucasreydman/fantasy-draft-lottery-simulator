@@ -1,55 +1,52 @@
 # Fantasy Draft Lottery Simulator
 
-A customizable, browser-based simulator for fantasy draft lotteries. Configure any league's lottery structure, visualize odds, and run realistic draft simulations.
+A configurable, browser-based simulator for fantasy draft lotteries. Set up your
+league, weight the lottery odds, and run a live, animated weighted lottery that
+produces a full snake or linear draft order — all client-side, no accounts, no server.
+
+**Live:** runs entirely in the browser. No build step, no dependencies.
 
 ## Features
 
-- **Flexible Configuration**: Customize league name, team count, team names, and lottery structure
-- **Multiple Pick Types**: Support for drawn picks, by-record picks, and locked picks
-- **Realistic Odds**: Automatically computed based on your league's lottery configuration
-- **Live Visualization**: See draft order and odds in real-time
-- **No Installation Required**: Runs entirely in your browser via GitHub Pages
+- **Quick start presets** — load a demo football, basketball, hockey, or baseball league and run instantly.
+- **Custom setup wizard** — name your league, set 4–20 teams, define the lottery structure, weight the combinations, and pick snake or linear format.
+- **Weighted lottery** — NBA-style combination draw with a discarded-combination redraw rule.
+- **Live odds table** — exact analytical odds for small leagues, Monte Carlo estimation for very large ones, always consistent with the actual draw.
+- **Pick ownership** — every team owns its own picks by default; open the editor to record traded picks. No mandatory setup before you can run.
+- **Animated reveal** — build-up ceremony with a top-3 podium, upset/shock-drop callouts, a skip control, and full reduced-motion support.
+- **Magic number** — run N simulations and treat the last as official, so no one can cherry-pick a result.
+- **Per-league history, export/import** — review past runs, and back up or share a league as JSON.
 
-## Getting Started
+## How it works
 
-### First Visit
+1. **Set up** — choose a preset or build a custom league in the wizard.
+2. **Adjust** — edit team names inline (they save automatically) and record any traded picks.
+3. **Run** — pick a magic number (1–99) and run the lottery.
+4. **Review & export** — see the full draft order, copy or download results.
 
-The setup wizard automatically appears on your first visit. Configure:
-- **League Name**: Custom name for your fantasy league
-- **Team Count**: Number of teams in your league (4-20)
-- **Team Names**: Name each team in your league
-- **Lottery Structure**: Define how many picks are determined by lottery, record, or locked
+## Configuration
 
-### Configuration Options
+- **Team count** — 4 to 20.
+- **Drawn picks** — how many top picks are decided by the lottery draw.
+- **By-record picks** — picks assigned by reverse standings, but still eligible for the lottery pool (a by-record team can jump into a drawn pick if its number is drawn).
+- **Locked picks** — remaining picks, fixed by standings (auto-computed).
+- **Combinations** — lottery weight per eligible team; must total 1,000.
+- **Draft rounds** — 1 to 10, in snake or linear order.
 
-Once set up, customize:
-- **Drawn Picks**: Number of picks determined by lottery draw
-- **By-Record Picks**: Number of picks determined by win-loss record
-- **Locked Picks**: Number of picks that are locked/auto-computed (calculated as total teams - drawn - by-record)
-- **Lottery Odds**: Assign combinations summing to 1000 for each non-locked pick
-- **Draft Rounds**: Simulate 1-10 draft rounds using your configured lottery structure
+All configuration is stored locally in your browser (`localStorage`) and persists across sessions. A corrupt or outdated saved league is repaired automatically rather than crashing.
 
-### Data Storage
+## Technical details
 
-All configuration is stored locally in your browser (localStorage). Your league settings persist across sessions.
+- **No build required** — plain HTML, CSS, and vanilla JavaScript.
+- **No dependencies** — no frameworks, no bundler.
+- **Accessible** — WCAG-conscious contrast, keyboard-operable controls, focus management, live regions, and `prefers-reduced-motion` support.
 
-## How It Works
+## Development
 
-1. **Setup**: Enter your league configuration
-2. **Define Odds**: Specify how many combinations each team receives for the lottery
-3. **Run Simulation**: Click "Run Lottery" to generate random draft order
-4. **Export**: Copy or save your draft results
-
-## Deployment
-
-This app is deployed via GitHub Pages with automated updates using GitHub Actions. Push to the `main` branch to deploy.
-
-## Technical Details
-
-- **No Build Required**: Single HTML file with embedded CSS and JavaScript
-- **No Dependencies**: Pure vanilla JavaScript, no frameworks
-- **Browser Storage**: Uses localStorage for configuration persistence
+Open `index.html` in any modern browser, or serve the folder statically
+(`python -m http.server`). Edit the files and refresh. Clear `localStorage` to
+replay the first-run experience.
 
 ## License
 
-See LICENSE file for details.
+See the LICENSE file.
